@@ -12,7 +12,8 @@
   </property>
   <property name="font">
    <font>
-    <pointsize>11</pointsize>
+    <family>Quicksand Light</family>
+    <pointsize>12</pointsize>
    </font>
   </property>
   <property name="windowTitle">
@@ -26,10 +27,35 @@
 }
 QLabel, QPushButton {
 	color: #fff;
+	border: none;
+}
+#PackageIcon {
+	border-radius: 10px;
+}
+#PackageInstallButton::hover {
+	color: #17C0E9;
+}
+#PackageInfoButton {
+	color: #888;
+}
+#PackageInfoButton::hover {
+	color: #fff;
 }</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="1">
+   <property name="leftMargin">
+    <number>40</number>
+   </property>
+   <property name="topMargin">
+    <number>7</number>
+   </property>
+   <property name="rightMargin">
+    <number>40</number>
+   </property>
+   <property name="bottomMargin">
+    <number>7</number>
+   </property>
+   <item row="0" column="0">
     <widget class="QFrame" name="PackageFrame">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -61,7 +87,7 @@ QLabel, QPushButton {
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <layout class="QGridLayout" name="gridLayout_2">
+     <layout class="QHBoxLayout" name="horizontalLayout">
       <property name="leftMargin">
        <number>7</number>
       </property>
@@ -74,24 +100,24 @@ QLabel, QPushButton {
       <property name="bottomMargin">
        <number>7</number>
       </property>
-      <item row="2" column="0">
+      <item>
        <widget class="QLabel" name="PackageIcon">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="minimumSize">
          <size>
           <width>153</width>
-          <height>86</height>
+          <height>82</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
           <width>153</width>
-          <height>86</height>
-         </size>
-        </property>
-        <property name="baseSize">
-         <size>
-          <width>100</width>
-          <height>100</height>
+          <height>82</height>
          </size>
         </property>
         <property name="text">
@@ -99,10 +125,31 @@ QLabel, QPushButton {
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item>
        <layout class="QVBoxLayout" name="PackageText">
+        <property name="leftMargin">
+         <number>5</number>
+        </property>
         <item>
          <widget class="QLabel" name="PackageTitle">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>25</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>25</height>
+           </size>
+          </property>
           <property name="font">
            <font>
             <family>Quicksand</family>
@@ -112,84 +159,105 @@ QLabel, QPushButton {
            </font>
           </property>
           <property name="text">
-           <string>Mid-Air Portals</string>
+           <string>Package Title</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QLabel" name="PackageDescription">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>42</height>
+           </size>
+          </property>
           <property name="font">
            <font>
             <family>Quicksand Light</family>
-            <pointsize>11</pointsize>
+            <pointsize>13</pointsize>
            </font>
           </property>
           <property name="text">
-           <string>Lets you place portals mid-air.</string>
+           <string>Package description, first line of text. 
+Second line of text.</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
        </layout>
       </item>
-      <item row="2" column="2">
-       <widget class="QPushButton" name="PackageButton">
-        <property name="minimumSize">
-         <size>
-          <width>100</width>
-          <height>40</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>100</width>
-          <height>40</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <family>Quicksand Medium</family>
-          <pointsize>14</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Install</string>
-        </property>
-        <property name="flat">
-         <bool>true</bool>
-        </property>
-       </widget>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QPushButton" name="PackageInstallButton">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>100</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Quicksand Medium</family>
+            <pointsize>14</pointsize>
+           </font>
+          </property>
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
+          <property name="text">
+           <string>Install</string>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="PackageInfoButton">
+          <property name="font">
+           <font>
+            <family>Quicksand Medium</family>
+           </font>
+          </property>
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
+          <property name="text">
+           <string>Read more...</string>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
-   </item>
-   <item row="0" column="0">
-    <spacer name="SpacerL">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="0" column="2">
-    <spacer name="SpacerR">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
    </item>
   </layout>
  </widget>

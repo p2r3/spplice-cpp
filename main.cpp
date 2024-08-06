@@ -6,18 +6,11 @@
 #include <filesystem>
 // Qt window drawing dependencies
 #include <QApplication>
-#include <QWidget>
-#include <QPushButton>
-#include <QMessageBox>
-#include <QLabel>
-#include <QVBoxLayout>
-#include <QScrollArea>
+#include <QPainter>
+#include <QPainterPath>
 // Widget templates for window elements
 #include "ui/mainwindow.h"
 #include "ui/packageitem.h"
-// Used for loading the QSS file
-#include <QFile>
-#include <QTextStream>
 // JSON parsing
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -69,32 +62,31 @@ std::string downloadTempFile (CURL *curl, const std::string &url, const std::str
 
 }
 
-// Defines a single package container in the package list
-class _PackageItem : public QWidget {
-  public:
-    _PackageItem (CURL *curl, const std::string& name, const QString &title, const QString &description, const std::string &imageUrl, QWidget *parent) : QWidget(parent) {
-      QHBoxLayout *layout = new QHBoxLayout(this);
+// Returns a version of the input pixmap with rounded corners
+QPixmap getRoundedPixmap (const QPixmap &src, int radius) {
 
-      std::string imageFileName = name + "_icon";
-      QString imagePath = QString::fromStdString(downloadTempFile(curl, imageUrl, imageFileName));
+  // Create a new QPixmap with the same size as the source pixmap
+  QPixmap rounded(src.size());
+  rounded.fill(Qt::transparent); // Fill with transparency
 
-      QLabel *imageLabel = new QLabel();
-      imageLabel->setPixmap(QPixmap(imagePath).scaled(100, 100, Qt::KeepAspectRatio));
-      layout->addWidget(imageLabel);
+  // Set up QPainter to draw on the rounded pixmap
+  QPainter painter(&rounded);
+  painter.setRenderHint(QPainter::Antialiasing);
+  painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
-      QVBoxLayout *textLayout = new QVBoxLayout();
-      QLabel *titleLabel = new QLabel(title);
-      QLabel *descriptionLabel = new QLabel(description);
-      textLayout->addWidget(titleLabel);
-      textLayout->addWidget(descriptionLabel);
-      layout->addLayout(textLayout);
+  // Create a path for the rounded corners
+  QPainterPath path;
+  path.addRoundedRect(src.rect(), radius, radius);
 
-      QPushButton *button = new QPushButton(">");
-      layout->addWidget(button);
+  // Clip the painter to the rounded rectangle
+  painter.setClipPath(path);
 
-      setLayout(layout);
-    }
-};
+  // Draw the original pixmap onto the rounded pixmap
+  painter.drawPixmap(0, 0, src);
+
+  return rounded;
+
+}
 
 // Define the structure of a package's properties
 class PackageData {
@@ -118,32 +110,43 @@ class PackageData {
       this->weight = package["weight"].GetInt();
     }
 
+    int getWeight() { return this->weight; }
+
     // Generates a PackageItem instance of this package for rendering
-    void createPackageItem(CURL *curl, QWidget *parent = nullptr) {
+    QWidget *createPackageItem(CURL *curl) {
 
-      QWidget item(parent);
+      QWidget *item = new QWidget;
       Ui::PackageItem itemUI;
-      itemUI.setupUi(&item);
+      itemUI.setupUi(item);
 
+      // Set values of text-based elements
       itemUI.PackageTitle->setText(QString::fromStdString( this->title ));
       itemUI.PackageDescription->setText(QString::fromStdString( this->description ));
 
+      // Download the package icon
       std::string imageFileName = this->name + "_icon";
       QString imagePath = QString::fromStdString(downloadTempFile(curl, this->icon, imageFileName));
 
-      // itemUI.PackageIcon->setPixmap(QPixmap(imagePath).scaled(100, 100, Qt::KeepAspectRatio));
-      itemUI.PackageIcon->setPixmap(QPixmap(imagePath));
+      // Create a pixmap for the icon
+      QSize labelSize = itemUI.PackageIcon->size();
+      QPixmap iconPixmap = QPixmap(imagePath).scaled(labelSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+      QPixmap iconRoundedPixmap = getRoundedPixmap(iconPixmap, 10);
+
+      // Set the package icon
+      itemUI.PackageIcon->setPixmap(iconRoundedPixmap);
+
+      return item;
 
     }
 };
 
 // Fetch and parse repository JSON from the given URL
-std::vector<PackageData> fetchRepository (CURL *curl, const std::string &url) {
+std::vector<PackageData> fetchRepository (CURL *curl, const char *url) {
 
   std::string readBuffer;
 
   // Set the URL for the request
-  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_URL, url);
 
   // Set the callback function to handle the data
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlStringWriteCallback);
@@ -177,6 +180,10 @@ std::vector<PackageData> fetchRepository (CURL *curl, const std::string &url) {
 
 }
 
+const char *repositoryURLs[] = {
+  "https://p2r3.com/spplice/repo2/index.json"
+};
+
 int main (int argc, char *argv[]) {
 
   try {
@@ -200,15 +207,21 @@ int main (int argc, char *argv[]) {
   }
 
   // Create a vector containing all packages from all repositories
-  std::vector<std::vector<PackageData>> repositories;
-  // Fetch the global package repository
-  repositories.push_back(fetchRepository(curl, "https://p2r3.com/spplice/repo2/index.json"));
+  std::vector<PackageData> allPackages;
+  // Fetch packages from each repository
+  for (auto url : repositoryURLs) {
+    std::vector<PackageData> repository = fetchRepository(curl, url);
+    allPackages.insert(allPackages.end(), repository.begin(), repository.end());
+  }
 
-  // Generate a _PackageItem for each package and add it to the layout
-  for (auto repository : repositories) {
-    for (auto package : repository) {
-      package.createPackageItem(curl, windowUI.PackageListContents);
-    }
+  // Sort packages by weight
+  std::sort(allPackages.begin(), allPackages.end(), [](PackageData &a, PackageData &b) {
+    return a.getWeight() > b.getWeight();
+  });
+
+  // Generate a PackageItem for each package and add it to the layout
+  for (auto package : allPackages) {
+    windowUI.PackageListLayout->addWidget(package.createPackageItem(curl));
   }
 
   // Clean up CURL
