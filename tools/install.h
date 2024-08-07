@@ -1,0 +1,7 @@
+#include <filesystem>
+
+class ToolsInstall {
+  public:
+    static bool extractLocalFile (const std::filesystem::path path, const std::filesystem::path dest);
+    static bool installRemoteFile (const std::string &fileURL);
+};

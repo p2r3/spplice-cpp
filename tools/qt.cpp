@@ -2,8 +2,11 @@
 #include <QPainter>
 #include <QPainterPath>
 
+// Definitions for this source file
+#include "qt.h"
+
 // Returns a version of the input pixmap with rounded corners
-QPixmap getRoundedPixmap (const QPixmap &src, int radius) {
+QPixmap ToolsQT::getRoundedPixmap (const QPixmap &src, int radius) {
 
   // Create a new QPixmap with the same size as the source pixmap
   QPixmap rounded(src.size());

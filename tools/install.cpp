@@ -1,7 +1,14 @@
+#include <iostream>
+#include <filesystem>
 #include <archive.h>
 #include <archive_entry.h>
+#include "../globals.h" // Project globals
+#include "curl.h" // ToolsCURL
 
-bool extractLocalFile (const std::filesystem::path path, const std::filesystem::path dest) {
+// Definitions for this source file
+#include "install.h"
+
+bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std::filesystem::path dest) {
 
   struct archive* archive;
   struct archive* extracted;
@@ -60,10 +67,10 @@ bool extractLocalFile (const std::filesystem::path path, const std::filesystem::
 
 }
 
-bool installRemoteFile (const std::string &fileURL) {
+bool ToolsInstall::installRemoteFile (const std::string &fileURL) {
 
   std::cout << "downloading file from " << fileURL << " to " << TEMP_DIR / "package" << std::endl;
-  downloadFile(fileURL, TEMP_DIR / "package");
+  ToolsCURL::downloadFile(fileURL, TEMP_DIR / "package");
 
   std::filesystem::path gamePath = "/home/p2r3/.local/share/Steam/steamapps/common/Portal 2";
   std::filesystem::path tempcontentPath = gamePath / "portal2_tempcontent";

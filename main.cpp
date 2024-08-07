@@ -1,30 +1,21 @@
 // Standard libraries
 #include <iostream>
-#include <string>
 #include <vector>
-#include <fstream>
 #include <filesystem>
-// Qt window drawing dependencies
+// Main window dependencies
 #include <QApplication>
-// Widget templates for window elements
 #include "ui/mainwindow.h"
-#include "ui/packageitem.h"
-// JSON parsing
-#include "rapidjson/document.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
-// Network requests
+// Global CURL initialization
 #include "curl/curl.h"
 
-// Points to the system-specific designated temporary file path
-const std::filesystem::path TEMP_DIR = std::filesystem::temp_directory_path() / "cpplice";
-
+// Project globals
+#include "globals.h"
 // Project-related tools, split up into files
-#include "tools/curl.cpp"
-#include "tools/qt.cpp"
-#include "tools/install.cpp"
-#include "tools/package.cpp"
-#include "tools/repo.cpp"
+#include "tools/curl.h"
+#include "tools/qt.h"
+#include "tools/install.h"
+#include "tools/package.h"
+#include "tools/repo.h"
 
 const char *repositoryURLs[] = {
   "https://p2r3.com/spplice/repo2/index.json"
@@ -49,15 +40,15 @@ int main (int argc, char *argv[]) {
   curl_global_init(CURL_GLOBAL_DEFAULT);
 
   // Create a vector containing all packages from all repositories
-  std::vector<PackageData> allPackages;
+  std::vector<ToolsPackage::PackageData> allPackages;
   // Fetch packages from each repository
   for (auto url : repositoryURLs) {
-    std::vector<PackageData> repository = fetchRepository(url);
+    std::vector<ToolsPackage::PackageData> repository = ToolsRepo::fetchRepository(url);
     allPackages.insert(allPackages.end(), repository.begin(), repository.end());
   }
 
   // Sort packages by weight
-  std::sort(allPackages.begin(), allPackages.end(), [](PackageData &a, PackageData &b) {
+  std::sort(allPackages.begin(), allPackages.end(), [](ToolsPackage::PackageData &a, ToolsPackage::PackageData &b) {
     return a.weight > b.weight;
   });
 
