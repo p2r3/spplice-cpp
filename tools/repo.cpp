@@ -1,5 +1,14 @@
 // Fetches and parses repository JSON from the given URL
-std::vector<PackageData> fetchRepository (CURL *curl, const char *url) {
+std::vector<PackageData> fetchRepository (const char *url) {
+
+  // Initialize CURL
+  CURL *curl = curl_easy_init();
+
+  if (!curl) {
+    std::cerr << "Failed to initialize CURL" << std::endl;
+    // Soft-fail by returning an empty vector
+    return std::vector<PackageData>();
+  }
 
   std::string readBuffer;
 
@@ -19,6 +28,9 @@ std::vector<PackageData> fetchRepository (CURL *curl, const char *url) {
     // Soft-fail by returning an empty vector
     return std::vector<PackageData>();
   }
+
+  // Clean up CURL
+  curl_easy_cleanup(curl);
 
   // Parse the repository index
   rapidjson::Document doc;

@@ -6,8 +6,6 @@
 #include <filesystem>
 // Qt window drawing dependencies
 #include <QApplication>
-#include <QPainter>
-#include <QPainterPath>
 // Widget templates for window elements
 #include "ui/mainwindow.h"
 #include "ui/packageitem.h"
@@ -24,6 +22,7 @@ const std::filesystem::path TEMP_DIR = std::filesystem::temp_directory_path() / 
 // Project-related tools, split up into files
 #include "tools/curl.cpp"
 #include "tools/qt.cpp"
+#include "tools/install.cpp"
 #include "tools/package.cpp"
 #include "tools/repo.cpp"
 
@@ -46,18 +45,14 @@ int main (int argc, char *argv[]) {
   Ui::MainWindow windowUI;
   windowUI.setupUi(&window);
 
-  // Initialize libcurl for package list fetching
-  CURL *curl = curl_easy_init();
-
-  if (!curl) {
-    throw std::runtime_error("Failed to initialize CURL");
-  }
+  // Initialize libcurl globally
+  curl_global_init(CURL_GLOBAL_DEFAULT);
 
   // Create a vector containing all packages from all repositories
   std::vector<PackageData> allPackages;
   // Fetch packages from each repository
   for (auto url : repositoryURLs) {
-    std::vector<PackageData> repository = fetchRepository(curl, url);
+    std::vector<PackageData> repository = fetchRepository(url);
     allPackages.insert(allPackages.end(), repository.begin(), repository.end());
   }
 
@@ -68,11 +63,11 @@ int main (int argc, char *argv[]) {
 
   // Generate a PackageItem for each package and add it to the layout
   for (auto package : allPackages) {
-    windowUI.PackageListLayout->addWidget(package.createPackageItem(curl));
+    windowUI.PackageListLayout->addWidget(package.createPackageItem());
   }
 
   // Clean up CURL
-  curl_easy_cleanup(curl);
+  curl_global_cleanup();
 
   // Display the main application window
   window.setWindowTitle("Spplice");

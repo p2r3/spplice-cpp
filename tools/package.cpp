@@ -22,7 +22,7 @@ class PackageData {
     }
 
     // Generates a PackageItem instance of the given package for rendering
-    QWidget *createPackageItem (CURL *curl) {
+    QWidget *createPackageItem () {
 
       QWidget *item = new QWidget;
       Ui::PackageItem itemUI;
@@ -33,8 +33,8 @@ class PackageData {
       itemUI.PackageDescription->setText(QString::fromStdString( this->description ));
 
       // Download the package icon
-      std::string imageFileName = this->name + "_icon";
-      QString imagePath = QString::fromStdString(downloadTempFile(curl, this->icon, imageFileName));
+      QString imagePath = QString::fromStdString(TEMP_DIR / (this->name + "_icon"));
+      downloadFile(this->icon, imagePath.toStdString());
 
       // Create a pixmap for the icon
       QSize labelSize = itemUI.PackageIcon->size();
@@ -46,8 +46,8 @@ class PackageData {
 
       // Connect the install button
       std::string fileURL = this->file;
-      QWidget::connect(itemUI.PackageInstallButton, &QPushButton::clicked, [fileURL, curl]() {
-        std::cout << "requested install " << fileURL << std::endl;
+      QWidget::connect(itemUI.PackageInstallButton, &QPushButton::clicked, [fileURL]() {
+        installRemoteFile(fileURL);
       });
 
       return item;

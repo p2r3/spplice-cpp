@@ -13,4 +13,9 @@ add_executable(SppliceCPP
   ui/packageitem.h
   main.cpp
 )
-target_link_libraries(SppliceCPP Qt5::Widgets curl)
+target_link_libraries(SppliceCPP
+  Qt5::Widgets
+  curl
+  archive
+  lzma
+)
