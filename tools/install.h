@@ -6,7 +6,7 @@
 class ToolsInstall {
   public:
     static bool extractLocalFile (const std::filesystem::path path, const std::filesystem::path dest);
-    static bool installRemoteFile (const std::string &fileURL);
+    static void installRemoteFile (const std::string &fileURL);
 };
 
 #endif

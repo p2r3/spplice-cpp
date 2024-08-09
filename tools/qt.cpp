@@ -53,7 +53,8 @@ QWidget *ToolsQT::createPackageItem (ToolsPackage::PackageData *package) {
   // Connect the install button
   std::string fileURL = package->file;
   QWidget::connect(itemUI.PackageInstallButton, &QPushButton::clicked, [fileURL]() {
-    ToolsInstall::installRemoteFile(fileURL);
+    std::thread installThread(ToolsInstall::installRemoteFile, fileURL);
+    installThread.detach();
   });
 
   // Prepare for package icon download

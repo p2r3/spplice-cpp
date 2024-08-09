@@ -1,5 +1,13 @@
 #include <iostream>
 #include <filesystem>
+#include <fstream>
+#include <string>
+#include <sstream>
+#include <unistd.h>
+#include <dirent.h>
+#include <cstdlib>
+#include <thread>
+#include <chrono>
 #include <archive.h>
 #include <archive_entry.h>
 #include "../globals.h" // Project globals
@@ -8,6 +16,7 @@
 // Definitions for this source file
 #include "install.h"
 
+// Extracts a tar.xz archive
 bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std::filesystem::path dest) {
 
   struct archive* archive;
@@ -67,15 +76,161 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
 
 }
 
-bool ToolsInstall::installRemoteFile (const std::string &fileURL) {
+// Retrieves the path to a process executable using its name
+std::string getProcessPath (const std::string &processName) {
 
-  std::cout << "downloading file from " << fileURL << " to " << TEMP_DIR / "package" << std::endl;
-  ToolsCURL::downloadFile(fileURL, TEMP_DIR / "package");
+  std::string executablePath = "";
 
-  std::filesystem::path gamePath = "/home/p2r3/.local/share/Steam/steamapps/common/Portal 2";
+  DIR *dir = opendir("/proc");
+  if (!dir) return executablePath;
+
+  // Look through /proc to find the PID of the given process
+  struct dirent *entry;
+  while ((entry = readdir(dir)) != NULL) {
+
+    // If not a PID, continue
+    if (!isdigit(*entry->d_name)) continue;
+
+    // Get the command line of the current PID
+    std::string cmdlineLink = "/proc/" + std::string(entry->d_name) + "/cmdline";
+    std::ifstream cmdlineFile(cmdlineLink);
+    if (!cmdlineFile.is_open()) continue;
+
+    std::string cmdline;
+    std::getline(cmdlineFile, cmdline);
+
+    // If the process is not mentioned in this command line, continue searching
+    std::size_t index = cmdline.find(processName);
+    if (index == std::string::npos) continue;
+
+    // Make sure that what we've found is a binary, not a path or argument
+    // Since we're searching for a path, it's safe to assume the binary is prefixed with a slash
+    const char prefix = cmdline[index - 1];
+    const char suffix = cmdline[index + processName.length()];
+    if (prefix != '/' || (suffix != ' ' && suffix != '\0')) continue;
+
+    // Use the PID we obtained to get the executable path
+    char exePath[1024] = {0};
+    std::string exeLink = "/proc/" + std::string(entry->d_name) + "/exe";
+
+    ssize_t len = readlink(exeLink.c_str(), exePath, sizeof(exePath) - 1);
+    if (len == -1) continue;
+    executablePath = exePath;
+
+  }
+  closedir(dir);
+
+  return executablePath;
+
+}
+
+// Finds the Steam binary and uses it to start Portal 2
+bool startPortal2 () {
+
+  std::string steamPath = getProcessPath("steam");
+  if (steamPath == "") {
+    std::cerr << "Failed to find Steam process path. Is Steam running?" << std::endl;
+    return false;
+  }
+
+  pid_t pid = fork();
+  if (pid == -1) {
+    std::cerr << "Failed to fork process." << std::endl;
+    return false;
+  }
+
+  // This applies to the child process from fork()
+  if (pid == 0) {
+    execl(steamPath.c_str(), steamPath.c_str(), "-applaunch", "620", "-tempcontent", NULL);
+
+    // execl only returns on error
+    std::cerr << "Failed to call Steam binary from fork." << std::endl;
+    _exit(1);
+  }
+
+  return true;
+
+}
+
+// Creates a symbolic link for a directory on Linux, and an NTFS junction on Windows
+bool linkDirectory (const std::filesystem::path target, const std::filesystem::path linkName) {
+
+  if (symlink(target.c_str(), linkName.c_str()) != 0) {
+    std::cerr << "Failed to create symbolic link " << target << " -> " << linkName << std::endl;
+    return false;
+  }
+  return true;
+
+}
+
+// Creates a hard link for a file on both Linux and Windows
+bool linkFile (const std::filesystem::path target, const std::filesystem::path linkName) {
+
+  if (link(target.c_str(), linkName.c_str()) != 0) {
+    std::cerr << "Failed to create hard link " << target << " -> " << linkName << std::endl;
+    return false;
+  }
+  return true;
+
+}
+
+// Removes a symbolic link to a directory on Linux, or an NTFS junction on Windows
+bool unlinkDirectory (const std::filesystem::path target) {
+
+  if (unlink(target.c_str()) != 0) {
+    std::cerr << "Failed to remove symbolic link " << target << std::endl;
+    return false;
+  }
+  return true;
+
+}
+
+void ToolsInstall::installRemoteFile (const std::string &fileURL) {
+
+  // Download the remote package
+  const std::filesystem::path tmpPackageFile = TEMP_DIR / "package";
+  const std::filesystem::path tmpPackageDirectory = TEMP_DIR / "tempcontent";
+
+  std::cout << "Downloading package from " << fileURL << " to " << tmpPackageFile << std::endl;
+  ToolsCURL::downloadFile(fileURL, tmpPackageFile);
+
+  // Extract the package to a temporary directory
+  std::filesystem::create_directories(tmpPackageDirectory);
+  if (!extractLocalFile(tmpPackageFile, tmpPackageDirectory)) return;
+  std::filesystem::remove(tmpPackageFile);
+
+  // Ensure the existence of a soundcache directory
+  std::filesystem::create_directories(tmpPackageDirectory / "maps");
+  std::filesystem::create_directories(tmpPackageDirectory / "maps" / "soundcache");
+
+  // Start Portal 2
+  if (!startPortal2()) return;
+
+  // Find the Portal 2 game files path
+  std::string gameProcessPath = "";
+  while (gameProcessPath == "") {
+    gameProcessPath = getProcessPath("portal2_linux");
+  }
+  std::filesystem::path gamePath = std::filesystem::path(gameProcessPath).parent_path();
+  std::cout << "Found Portal 2 at " << gameProcessPath << std::endl;
+
+  // Link the extracted package files to the destination tempcontent directory
   std::filesystem::path tempcontentPath = gamePath / "portal2_tempcontent";
-  std::filesystem::create_directories(tempcontentPath);
+  if (!linkDirectory(tmpPackageDirectory, tempcontentPath)) return;
+  std::cout << "Linked package files to " << tempcontentPath << std::endl;
 
-  return extractLocalFile(TEMP_DIR / "package", tempcontentPath);
+  // Link the soundcache from base Portal 2 to skip waiting for it to generate
+  linkFile(gamePath / "portal2" / "maps" / "soundcache" / "_master.cache", tempcontentPath / "maps" / "soundcache" / "_master.cache");
+  std::cout << "Linked soundcache" << std::endl;
+
+  // Stall until Portal 2 has been closed
+  while (getProcessPath("portal2_linux") != "") {
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  }
+
+  // When Portal 2 exits, remove the tempcontent link and all related files
+  unlinkDirectory(tempcontentPath);
+  std::filesystem::remove_all(tmpPackageDirectory);
+  std::cout << "Unlinked and deleted package files" << std::endl;
 
 }
