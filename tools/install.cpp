@@ -185,7 +185,7 @@ bool unlinkDirectory (const std::filesystem::path target) {
 
 }
 
-void ToolsInstall::installRemoteFile (const std::string &fileURL) {
+void ToolsInstall::installRemoteFile (const std::string &fileURL, std::function<void(const std::string)> failCallback, std::function<void()> successCallback) {
 
   // Download the remote package
   const std::filesystem::path tmpPackageFile = TEMP_DIR / "package";
@@ -196,7 +196,9 @@ void ToolsInstall::installRemoteFile (const std::string &fileURL) {
 
   // Extract the package to a temporary directory
   std::filesystem::create_directories(tmpPackageDirectory);
-  if (!extractLocalFile(tmpPackageFile, tmpPackageDirectory)) return;
+  if (!extractLocalFile(tmpPackageFile, tmpPackageDirectory)) {
+    return failCallback("Failed to extract package.");
+  }
   std::filesystem::remove(tmpPackageFile);
 
   // Ensure the existence of a soundcache directory
@@ -204,7 +206,9 @@ void ToolsInstall::installRemoteFile (const std::string &fileURL) {
   std::filesystem::create_directories(tmpPackageDirectory / "maps" / "soundcache");
 
   // Start Portal 2
-  if (!startPortal2()) return;
+  if (!startPortal2()) {
+    return failCallback("Failed to start Portal 2. Is Steam running?");
+  }
 
   // Find the Portal 2 game files path
   std::string gameProcessPath = "";
@@ -216,12 +220,15 @@ void ToolsInstall::installRemoteFile (const std::string &fileURL) {
 
   // Link the extracted package files to the destination tempcontent directory
   std::filesystem::path tempcontentPath = gamePath / "portal2_tempcontent";
-  if (!linkDirectory(tmpPackageDirectory, tempcontentPath)) return;
-  std::cout << "Linked package files to " << tempcontentPath << std::endl;
+  if (!linkDirectory(tmpPackageDirectory, tempcontentPath)) {
+    return failCallback("Failed to link package files to portal2_tempcontent.");
+  }
 
   // Link the soundcache from base Portal 2 to skip waiting for it to generate
   linkFile(gamePath / "portal2" / "maps" / "soundcache" / "_master.cache", tempcontentPath / "maps" / "soundcache" / "_master.cache");
-  std::cout << "Linked soundcache" << std::endl;
+
+  // Report install success to the UI
+  successCallback();
 
   // Stall until Portal 2 has been closed
   while (getProcessPath("portal2_linux") != "") {

@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/fonts">
+    <file>Quicksand.ttf</file>
+  </qresource>
+</RCC>

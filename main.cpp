@@ -6,6 +6,7 @@
 #include <chrono>
 // Main window dependencies
 #include <QApplication>
+#include <QFontDatabase>
 #include "ui/mainwindow.h"
 // Global CURL initialization
 #include "curl/curl.h"
@@ -32,6 +33,14 @@ int main (int argc, char *argv[]) {
   }
 
   QApplication app(argc, argv);
+
+  // Load the Quicksand font from resources
+  int fontID = QFontDatabase::addApplicationFont(":/fonts/Quicksand.ttf");
+  if (fontID != -1) {
+    QString fontFamily = QFontDatabase::applicationFontFamilies(fontID).at(0);
+    QFont font(fontFamily);
+    QApplication::setFont(font);
+  }
 
   // Set up the main application window
   QMainWindow window;
