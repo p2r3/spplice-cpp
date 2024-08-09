@@ -2,6 +2,8 @@
 #include <iostream>
 #include <vector>
 #include <filesystem>
+#include <thread>
+#include <chrono>
 // Main window dependencies
 #include <QApplication>
 #include "ui/mainwindow.h"
@@ -54,7 +56,9 @@ int main (int argc, char *argv[]) {
 
   // Generate a PackageItem for each package and add it to the layout
   for (auto package : allPackages) {
-    windowUI.PackageListLayout->addWidget(package.createPackageItem());
+    windowUI.PackageListLayout->addWidget(ToolsQT::createPackageItem(&package));
+    // Sleep for a few milliseconds on each package to reduce strain on the network
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 
   // Clean up CURL
