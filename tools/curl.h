@@ -1,3 +1,6 @@
+#ifndef TOOLS_CURL_H
+#define TOOLS_CURL_H
+
 #include <filesystem>
 
 class ToolsCURL {
@@ -8,3 +11,5 @@ class ToolsCURL {
     static bool downloadFile (const std::string &url, const std::filesystem::path outputPath);
     static std::string downloadString (const std::string &url);
 };
+
+#endif

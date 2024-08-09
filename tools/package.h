@@ -1,3 +1,6 @@
+#ifndef TOOLS_PACKAGE_H
+#define TOOLS_PACKAGE_H
+
 #include "rapidjson/document.h"
 #include <QWidget>
 
@@ -16,7 +19,8 @@ class ToolsPackage {
         int weight;
 
         PackageData (rapidjson::Value &package);
-        QWidget *createPackageItem ();
 
     };
 };
+
+#endif

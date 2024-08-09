@@ -1,3 +1,6 @@
+#ifndef TOOLS_INSTALL_H
+#define TOOLS_INSTALL_H
+
 #include <filesystem>
 
 class ToolsInstall {
@@ -5,3 +8,5 @@ class ToolsInstall {
     static bool extractLocalFile (const std::filesystem::path path, const std::filesystem::path dest);
     static bool installRemoteFile (const std::string &fileURL);
 };
+
+#endif
