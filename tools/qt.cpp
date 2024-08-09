@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <thread>
 #include "../ui/packageitem.h"
+#include "../ui/errordialog.h"
 #include "curl.h"    // ToolsCURL
 #include "qt.h"      // ToolsQT
 #include "install.h" // ToolsInstall
@@ -42,21 +43,14 @@ QPixmap ToolsQT::getRoundedPixmap (const QPixmap &src, int radius) {
 }
 
 // Finds a widget by its name. This is required as threads and lambdas make widget references unreliable.
-QWidget *ToolsQT::findByName (const std::string &widgetName) {
-
-  QString widgetQName = QString::fromStdString(widgetName);
-  QWidget *output;
-
-  // Notice that we don't immediately return the result once we find it.
-  // I'm not sure why, but it seems that if you need a child of the element you're searching for,
-  // you run into segmentation faults unless you've iterated up to the child element as well.
-  foreach (QWidget *widget, QApplication::allWidgets()) {
-    if (widget->objectName() != widgetQName) continue;
-    output = widget;
-  }
-
-  return output;
-
+#define TOOLS_QT_FIND_BY_NAME(widgetName, result) { \
+  QString widgetQName = QString::fromStdString(widgetName); \
+  result = nullptr; \
+  foreach (QWidget *widget, QApplication::allWidgets()) { \
+    if (widget->objectName() != widgetQName) continue; \
+    result = widget; \
+    break; \
+  } \
 }
 
 // Generates a PackageItem instance of the given package for rendering
@@ -85,14 +79,23 @@ QWidget *ToolsQT::createPackageItem (ToolsPackage::PackageData *package) {
 
     std::thread installThread([fileURL, packageName]() {
 
-      QPushButton *installButton = ToolsQT::findByName(packageName)->findChild<QPushButton *>("PackageInstallButton");
+      QWidget *packageItem;
+      TOOLS_QT_FIND_BY_NAME(packageName, packageItem);
+      QPushButton *installButton = packageItem->findChild<QPushButton *>("PackageInstallButton");
+
       installButton->setText("Installing...");
       installButton->setStyleSheet("color: #faa81a;");
 
       ToolsInstall::installRemoteFile(fileURL, [](const std::string message) {
-        std::cerr << "Error: " << message << std::endl;
+        QDialog *dialog = new QDialog;
+        Ui::ErrorDialog dialogUI;
+        dialogUI.setupUi(dialog);
+        dialogUI.ErrorText->setText(QString::fromStdString(message));
+        dialog->exec();
       }, [packageName]() {
-        QPushButton *installButton = ToolsQT::findByName(packageName)->findChild<QPushButton *>("PackageInstallButton");
+        QWidget *packageItem;
+        TOOLS_QT_FIND_BY_NAME(packageName, packageItem);
+        QPushButton *installButton = packageItem->findChild<QPushButton *>("PackageInstallButton");
         installButton->setText("Installed");
       });
 
@@ -122,7 +125,9 @@ QWidget *ToolsQT::createPackageItem (ToolsPackage::PackageData *package) {
       }
     }
 
-    QLabel *packageIcon = ToolsQT::findByName(packageName)->findChild<QLabel *>("PackageIcon");
+    QWidget *packageItem;
+    TOOLS_QT_FIND_BY_NAME(packageName, packageItem);
+    QLabel *packageIcon = packageItem->findChild<QLabel *>("PackageIcon");
 
     // Create a pixmap for the icon
     QSize labelSize = packageIcon->size();

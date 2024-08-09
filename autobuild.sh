@@ -10,6 +10,7 @@ fi
 cd ui
 ../qt5-static/bin/uic -o mainwindow.h MainWindow.ui
 ../qt5-static/bin/uic -o packageitem.h PackageItem.ui
+../qt5-static/bin/uic -o errordialog.h ErrorDialog.ui
 cd ..
 
 # Clear any build cache - building it is fast enough to not really need a cache.

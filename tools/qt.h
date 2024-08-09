@@ -9,7 +9,6 @@ class ToolsQT {
   public:
     static QPixmap getRoundedPixmap (const QPixmap &src, int radius);
     static QWidget *createPackageItem (ToolsPackage::PackageData *package);
-    static QWidget *findByName (const std::string &widgetName);
 };
 
 #endif
