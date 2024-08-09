@@ -185,17 +185,15 @@ bool unlinkDirectory (const std::filesystem::path target) {
 
 }
 
-void ToolsInstall::installRemoteFile (const std::string &fileURL, std::function<void(const std::string)> failCallback, std::function<void()> successCallback) {
-
-  // Download the remote package
-  const std::filesystem::path tmpPackageFile = TEMP_DIR / "package";
-  const std::filesystem::path tmpPackageDirectory = TEMP_DIR / "tempcontent";
-
-  std::cout << "Downloading package from " << fileURL << " to " << tmpPackageFile << std::endl;
-  ToolsCURL::downloadFile(fileURL, tmpPackageFile);
+// Installs the package located at the temporary directory (TEMP_DIR/current_package)
+void ToolsInstall::installTempFile (std::function<void(const std::string)> failCallback, std::function<void()> successCallback) {
 
   // Extract the package to a temporary directory
+  const std::filesystem::path tmpPackageFile = TEMP_DIR / "current_package";
+  const std::filesystem::path tmpPackageDirectory = TEMP_DIR / "tempcontent";
+
   std::filesystem::create_directories(tmpPackageDirectory);
+
   if (!extractLocalFile(tmpPackageFile, tmpPackageDirectory)) {
     return failCallback("Failed to extract package.");
   }

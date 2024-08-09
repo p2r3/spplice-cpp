@@ -94,7 +94,11 @@ QWidget *ToolsQT::createPackageItem (ToolsPackage::PackageData *package) {
       installButton->setText("Installing...");
       installButton->setStyleSheet("color: #faa81a;");
 
-      ToolsInstall::installRemoteFile(fileURL, [](const std::string message) {
+      // Download the package's .tar.xz file into its temporary path
+      ToolsCURL::downloadFile(fileURL, TEMP_DIR / "current_package");
+
+      // Install the file
+      ToolsInstall::installTempFile([](const std::string message) {
 
         // If unsuccessful, show the error dialog
         QDialog *dialog = new QDialog;
