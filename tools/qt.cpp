@@ -71,8 +71,16 @@ QWidget *ToolsQT::createPackageItem (ToolsPackage::PackageData *package) {
   std::string fileURL = package->file;
   QWidget::connect(itemUI.PackageInstallButton, &QPushButton::clicked, [fileURL, packageName]() {
 
+    // If a package is already installing (or installed), exit early
     if (BUSY_INSTALLING) {
-      std::cerr << "Cannot install package while another package is busy!" << std::endl;
+      QDialog *dialog = new QDialog;
+      Ui::ErrorDialog dialogUI;
+      dialogUI.setupUi(dialog);
+
+      dialogUI.ErrorTitle->setText("Spplice is busy");
+      dialogUI.ErrorText->setText("You cannot install two packages at once!");
+      dialog->exec();
+
       return;
     }
     BUSY_INSTALLING = true;
@@ -87,16 +95,25 @@ QWidget *ToolsQT::createPackageItem (ToolsPackage::PackageData *package) {
       installButton->setStyleSheet("color: #faa81a;");
 
       ToolsInstall::installRemoteFile(fileURL, [](const std::string message) {
+
+        // If unsuccessful, show the error dialog
         QDialog *dialog = new QDialog;
         Ui::ErrorDialog dialogUI;
         dialogUI.setupUi(dialog);
+
+        dialogUI.ErrorTitle->setText("Installation aborted");
         dialogUI.ErrorText->setText(QString::fromStdString(message));
         dialog->exec();
+
       }, [packageName]() {
+
+        // If successful, set the button text to "Installed"
         QWidget *packageItem;
         TOOLS_QT_FIND_BY_NAME(packageName, packageItem);
         QPushButton *installButton = packageItem->findChild<QPushButton *>("PackageInstallButton");
+
         installButton->setText("Installed");
+
       });
 
       BUSY_INSTALLING = false;
