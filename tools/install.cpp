@@ -12,6 +12,7 @@
 #include <archive_entry.h>
 #include "../globals.h" // Project globals
 #include "curl.h" // ToolsCURL
+#include "qt.h" // ToolsQT
 
 // Definitions for this source file
 #include "install.h"
@@ -237,5 +238,34 @@ void ToolsInstall::installTempFile (std::function<void(const std::string)> failC
   unlinkDirectory(tempcontentPath);
   std::filesystem::remove_all(tmpPackageDirectory);
   std::cout << "Unlinked and deleted package files" << std::endl;
+
+}
+
+void ToolsInstall::installFromData (ToolsPackage::PackageData *package) {
+
+  // If a package is already installing (or installed), exit early
+  if (SPPLICE_INSTALL_STATE != 0) {
+    ToolsQT::displayErrorPopup("Spplice is busy", "You cannot install two packages at once!");
+    return;
+  }
+
+  SPPLICE_INSTALL_STATE = 1;
+
+  // Download the package's .tar.xz file into its temporary path
+  ToolsCURL::downloadFile(package->file, TEMP_DIR / "current_package");
+
+  // Install the file
+  ToolsInstall::installTempFile([](const std::string &message) {
+
+    // If unsuccessful, show the error dialog
+    ToolsQT::displayErrorPopup("Installation aborted", message);
+
+  }, []() {
+
+    SPPLICE_INSTALL_STATE = 2;
+
+  });
+
+  SPPLICE_INSTALL_STATE = 0;
 
 }

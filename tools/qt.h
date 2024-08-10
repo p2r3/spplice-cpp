@@ -3,12 +3,13 @@
 
 #include <QWidget>
 #include <QPixmap>
+#include <QVBoxLayout>
 #include "package.h" // ToolsPackage
 
 class ToolsQT {
   public:
     static QPixmap getRoundedPixmap (const QPixmap &src, int radius);
-    static QWidget *createPackageItem (ToolsPackage::PackageData *package);
+    static void displayErrorPopup (const std::string &title, const std::string &message);
 };
 
 #endif

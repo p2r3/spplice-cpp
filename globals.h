@@ -4,6 +4,6 @@
 #include <filesystem>
 
 extern const std::filesystem::path TEMP_DIR;
-extern bool BUSY_INSTALLING;
+extern int SPPLICE_INSTALL_STATE;
 
 #endif

@@ -7,7 +7,10 @@
 // Main window dependencies
 #include <QApplication>
 #include <QFontDatabase>
+#include <QThread>
+#include <QObject>
 #include "ui/mainwindow.h"
+#include "ui/packageitem.h"
 // Global CURL initialization
 #include "curl/curl.h"
 
@@ -63,11 +66,47 @@ int main (int argc, char *argv[]) {
     return a.weight > b.weight;
   });
 
-  // Generate a PackageItem for each package and add it to the layout
+  // Generate a PackageItem for each package
   for (auto package : allPackages) {
-    windowUI.PackageListLayout->addWidget(ToolsQT::createPackageItem(&package));
+
+    // Create the package item widget
+    QWidget *item = new QWidget;
+    Ui::PackageItem itemUI;
+    itemUI.setupUi(item);
+
+    // Set the title and description
+    itemUI.PackageTitle->setText(QString::fromStdString(package.title));
+    itemUI.PackageDescription->setText(QString::fromStdString(package.description));
+
+    // Add the item to the package list container
+    windowUI.PackageListLayout->addWidget(item);
+
+    // Start a new worker thread for asynchronous icon fetching
+    PackageItemWorker *worker = new PackageItemWorker;
+    QThread *workerThread = new QThread;
+    worker->moveToThread(workerThread);
+
+    std::string imageURL = package.icon;
+    std::string imagePath = TEMP_DIR / (package.name + "_icon");
+    QSize iconSize = itemUI.PackageIcon->size();
+
+    // Connect the task of fetching the icon to the worker
+    QObject::connect(workerThread, &QThread::started, worker, [worker, imageURL, imagePath, iconSize]() {
+      QMetaObject::invokeMethod(worker, "getPackageIcon", Q_ARG(std::string, imageURL), Q_ARG(std::string, imagePath), Q_ARG(QSize, iconSize));
+    });
+    QObject::connect(worker, &PackageItemWorker::packageIconResult, itemUI.PackageIcon, &QLabel::setPixmap);
+
+    // Clean up the thread once it's done
+    QObject::connect(worker, &PackageItemWorker::packageIconReady, workerThread, &QThread::quit);
+    QObject::connect(worker, &PackageItemWorker::packageIconReady, worker, &PackageItemWorker::deleteLater);
+    QObject::connect(workerThread, &QThread::finished, workerThread, &QThread::deleteLater);
+
+    // Start the worker thread
+    workerThread->start();
+
     // Sleep for a few milliseconds on each package to reduce strain on the network
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
   }
 
   // Clean up CURL
