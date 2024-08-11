@@ -27,14 +27,9 @@ ToolsPackage::PackageData::PackageData (rapidjson::Value &package) {
 
 void PackageItemWorker::getPackageIcon (const std::string &imageURL, const std::string &imagePath, const QSize iconSize) {
 
-  // Check if we already have a cached package icon
-  if (!std::filesystem::exists(imagePath)) {
-    // Attempt the download 5 times before giving up
-    for (int attempts = 0; attempts < 5; attempts ++) {
-      if (ToolsCURL::downloadFile(imageURL, imagePath)) {
-        break;
-      }
-    }
+  // Attempt the download 5 times before giving up
+  for (int attempts = 0; attempts < 5; attempts ++) {
+    if (ToolsCURL::downloadFile(imageURL, imagePath)) break;
   }
 
   // Create a pixmap for the icon
