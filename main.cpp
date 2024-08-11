@@ -1,5 +1,6 @@
 // Standard libraries
 #include <iostream>
+#include <utility>
 #include <vector>
 #include <filesystem>
 #include <thread>
@@ -77,6 +78,50 @@ int main (int argc, char *argv[]) {
     // Set the title and description
     itemUI.PackageTitle->setText(QString::fromStdString(package.title));
     itemUI.PackageDescription->setText(QString::fromStdString(package.description));
+
+    // Connect the install button
+    QPushButton *installButton = itemUI.PackageInstallButton;
+    std::string fileURL = package.file;
+
+    QObject::connect(installButton, &QPushButton::clicked, [fileURL, installButton]() {
+
+      // Create a thread for asynchronous installation
+      PackageItemWorker *worker = new PackageItemWorker;
+      QThread *workerThread = new QThread;
+      worker->moveToThread(workerThread);
+
+      // Connect the task of installing the package to the worker
+      QObject::connect(workerThread, &QThread::started, worker, [worker, fileURL]() {
+        QMetaObject::invokeMethod(worker, "installPackage", Q_ARG(std::string, fileURL));
+      });
+
+      // Update the button text based on the installation state
+      QObject::connect(worker, &PackageItemWorker::installStateUpdate, installButton, [installButton]() {
+        switch (SPPLICE_INSTALL_STATE) {
+          case 0:
+            installButton->setText("Install");
+            installButton->setStyleSheet("");
+            break;
+          case 1:
+            installButton->setText("Installing...");
+            installButton->setStyleSheet("color: #faa81a;");
+            break;
+          case 2:
+            installButton->setText("Installed");
+            installButton->setStyleSheet("color: #faa81a;");
+            break;
+        }
+      });
+
+      // Clean up the thread once it's done
+      QObject::connect(worker, &PackageItemWorker::packageIconReady, workerThread, &QThread::quit);
+      QObject::connect(worker, &PackageItemWorker::packageIconReady, worker, &PackageItemWorker::deleteLater);
+      QObject::connect(workerThread, &QThread::finished, workerThread, &QThread::deleteLater);
+
+      // Start the worker thread
+      workerThread->start();
+
+    });
 
     // Add the item to the package list container
     windowUI.PackageListLayout->addWidget(item);

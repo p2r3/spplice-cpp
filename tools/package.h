@@ -31,10 +31,12 @@ class PackageItemWorker : public QObject {
 
   public slots:
     void getPackageIcon (const std::string &imageURL, const std::string &imagePath, const QSize iconSize);
+    void installPackage (const std::string &fileURL);
 
   signals:
     void packageIconResult (QPixmap pixmap);
     void packageIconReady ();
+    void installStateUpdate ();
 
 };
 

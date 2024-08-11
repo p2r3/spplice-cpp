@@ -1,4 +1,5 @@
 #include <iostream>
+#include <utility>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -78,7 +79,7 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
 }
 
 // Retrieves the path to a process executable using its name
-std::string getProcessPath (const std::string &processName) {
+std::string ToolsInstall::getProcessPath (const std::string &processName) {
 
   std::string executablePath = "";
 
@@ -128,7 +129,7 @@ std::string getProcessPath (const std::string &processName) {
 // Finds the Steam binary and uses it to start Portal 2
 bool startPortal2 () {
 
-  std::string steamPath = getProcessPath("steam");
+  std::string steamPath = ToolsInstall::getProcessPath("steam");
   if (steamPath == "") {
     std::cerr << "Failed to find Steam process path. Is Steam running?" << std::endl;
     return false;
@@ -187,7 +188,7 @@ bool unlinkDirectory (const std::filesystem::path target) {
 }
 
 // Installs the package located at the temporary directory (TEMP_DIR/current_package)
-void ToolsInstall::installTempFile (std::function<void(const std::string)> failCallback, std::function<void()> successCallback) {
+std::pair<bool, std::string> ToolsInstall::installTempFile () {
 
   // Extract the package to a temporary directory
   const std::filesystem::path tmpPackageFile = TEMP_DIR / "current_package";
@@ -196,7 +197,7 @@ void ToolsInstall::installTempFile (std::function<void(const std::string)> failC
   std::filesystem::create_directories(tmpPackageDirectory);
 
   if (!extractLocalFile(tmpPackageFile, tmpPackageDirectory)) {
-    return failCallback("Failed to extract package.");
+    return std::pair<bool, std::string> (false, "Failed to extract package.");
   }
   std::filesystem::remove(tmpPackageFile);
 
@@ -206,13 +207,13 @@ void ToolsInstall::installTempFile (std::function<void(const std::string)> failC
 
   // Start Portal 2
   if (!startPortal2()) {
-    return failCallback("Failed to start Portal 2. Is Steam running?");
+    return std::pair<bool, std::string> (false, "Failed to start Portal 2. Is Steam running?");
   }
 
   // Find the Portal 2 game files path
   std::string gameProcessPath = "";
   while (gameProcessPath == "") {
-    gameProcessPath = getProcessPath("portal2_linux");
+    gameProcessPath = ToolsInstall::getProcessPath("portal2_linux");
   }
   std::filesystem::path gamePath = std::filesystem::path(gameProcessPath).parent_path();
   std::cout << "Found Portal 2 at " << gameProcessPath << std::endl;
@@ -220,52 +221,25 @@ void ToolsInstall::installTempFile (std::function<void(const std::string)> failC
   // Link the extracted package files to the destination tempcontent directory
   std::filesystem::path tempcontentPath = gamePath / "portal2_tempcontent";
   if (!linkDirectory(tmpPackageDirectory, tempcontentPath)) {
-    return failCallback("Failed to link package files to portal2_tempcontent.");
+    return std::pair<bool, std::string> (false, "Failed to link package files to portal2_tempcontent.");
   }
 
   // Link the soundcache from base Portal 2 to skip waiting for it to generate
   linkFile(gamePath / "portal2" / "maps" / "soundcache" / "_master.cache", tempcontentPath / "maps" / "soundcache" / "_master.cache");
 
   // Report install success to the UI
-  successCallback();
-
-  // Stall until Portal 2 has been closed
-  while (getProcessPath("portal2_linux") != "") {
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-  }
-
-  // When Portal 2 exits, remove the tempcontent link and all related files
-  unlinkDirectory(tempcontentPath);
-  std::filesystem::remove_all(tmpPackageDirectory);
-  std::cout << "Unlinked and deleted package files" << std::endl;
+  return std::pair<bool, std::string> (true, gamePath);
 
 }
 
-void ToolsInstall::installFromData (ToolsPackage::PackageData *package) {
+void ToolsInstall::Uninstall (const std::string &gamePath) {
 
-  // If a package is already installing (or installed), exit early
-  if (SPPLICE_INSTALL_STATE != 0) {
-    ToolsQT::displayErrorPopup("Spplice is busy", "You cannot install two packages at once!");
-    return;
-  }
+  // Remove the tempcontent directory link
+  const std::filesystem::path tempcontentPath = std::filesystem::path(gamePath) / "portal2_tempcontent";
+  unlinkDirectory(tempcontentPath);
 
-  SPPLICE_INSTALL_STATE = 1;
-
-  // Download the package's .tar.xz file into its temporary path
-  ToolsCURL::downloadFile(package->file, TEMP_DIR / "current_package");
-
-  // Install the file
-  ToolsInstall::installTempFile([](const std::string &message) {
-
-    // If unsuccessful, show the error dialog
-    ToolsQT::displayErrorPopup("Installation aborted", message);
-
-  }, []() {
-
-    SPPLICE_INSTALL_STATE = 2;
-
-  });
-
-  SPPLICE_INSTALL_STATE = 0;
+  // Remove the actual package directory containing all package files
+  const std::filesystem::path tmpPackageDirectory = TEMP_DIR / "tempcontent";
+  std::filesystem::remove_all(tmpPackageDirectory);
 
 }
