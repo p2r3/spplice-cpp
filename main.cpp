@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <thread>
 #include <chrono>
+#include <cstdlib>
 // Main window dependencies
 #include <QApplication>
 #include <QFontDatabase>
@@ -160,6 +161,13 @@ int main (int argc, char *argv[]) {
   // Display the main application window
   window.setWindowTitle("Spplice");
   window.show();
+
+  // Ensure that no package is installed if Portal 2 is running when exiting Spplice
+  std::atexit([]() {
+    const std::string gameProcessPath = ToolsInstall::getProcessPath("portal2_linux");
+    if (gameProcessPath == "") return;
+    ToolsInstall::Uninstall(std::filesystem::path(gameProcessPath).parent_path());
+  });
 
   return app.exec();
 
