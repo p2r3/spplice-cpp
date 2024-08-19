@@ -11,17 +11,6 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(BUILD_SHARED_LIBS OFF)
 
-# Add compilable objects to the executable.
-add_executable(SppliceCPP
-  main.cpp
-  globals.cpp
-  tools/curl.cpp
-  tools/qt.cpp
-  tools/install.cpp
-  tools/package.cpp
-  tools/repo.cpp
-)
-
 # This is used along with an s/e/d to force linking of specific dependencies statically throughout Qt.
 # Currently, that's just xinerama. Other libraries bloat the output binary by a LOT.
 set(FIND_LIBRARY_OVERRIDE_LIST "xcb-xinerama")
@@ -57,8 +46,25 @@ endfunction()
 set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5-static/lib/cmake/Qt5Widgets")
 set(QT_STATIC ON)
 
-# Find and link Qt5Widgets.
+# Find Qt5Widgets.
 find_package(Qt5 REQUIRED COMPONENTS Widgets)
+
+# Add resources file
+qt_add_resources(RESOURCES resources.qrc)
+
+# Add compilable objects to the executable.
+add_executable(SppliceCPP
+  main.cpp
+  globals.cpp
+  tools/curl.cpp
+  tools/qt.cpp
+  tools/install.cpp
+  tools/package.cpp
+  tools/repo.cpp
+  ${RESOURCES}
+)
+
+# Link Qt5Widgets
 target_link_libraries(SppliceCPP Qt5::Widgets)
 
 # Finally, link our project's individual dependencies.

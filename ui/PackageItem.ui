@@ -147,12 +147,12 @@ QLabel, QPushButton {
           <property name="maximumSize">
            <size>
             <width>16777215</width>
-            <height>25</height>
+            <height>28</height>
            </size>
           </property>
           <property name="font">
            <font>
-            <family>Quicksand</family>
+            <family>Quicksand Medium</family>
             <pointsize>16</pointsize>
             <weight>75</weight>
             <bold>true</bold>
@@ -174,18 +174,18 @@ QLabel, QPushButton {
           <property name="maximumSize">
            <size>
             <width>16777215</width>
-            <height>42</height>
+            <height>46</height>
            </size>
           </property>
           <property name="font">
            <font>
-            <family>Quicksand Light</family>
+            <family>Quicksand Light [PfEd]</family>
             <pointsize>13</pointsize>
            </font>
           </property>
           <property name="text">
-           <string>Package description, first line of text. 
-Second line of text.</string>
+           <string>&lt;p style=&quot;line-height: 1&quot;&gt;Package description, first line of text.&lt;br&gt;
+Second line of text.&lt;/p&gt;</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>

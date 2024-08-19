@@ -44,11 +44,9 @@ int main (int argc, char *argv[]) {
   QApplication app(argc, argv);
 
   // Load the Quicksand font from resources
-  int fontID = QFontDatabase::addApplicationFont(":/fonts/Quicksand.ttf");
-  if (fontID != -1) {
-    QString fontFamily = QFontDatabase::applicationFontFamilies(fontID).at(0);
-    QFont font(fontFamily);
-    QApplication::setFont(font);
+  int fontID = QFontDatabase::addApplicationFont(":/Quicksand.ttf");
+  if (fontID == -1) {
+    std::cerr << "Failed to load font" << std::endl;
   }
 
   // Set up the main application window
@@ -84,7 +82,9 @@ int main (int argc, char *argv[]) {
 
     // Set the title and description
     itemUI.PackageTitle->setText(QString::fromStdString(package.title));
-    itemUI.PackageDescription->setText(QString::fromStdString(package.description));
+    itemUI.PackageDescription->setText(QString::fromStdString(
+      "<p style='line-height: 0.8em; max-height: 1.6em;'>" + package.description + "</p>"
+    ));
 
     // Connect the install button
     QPushButton *installButton = itemUI.PackageInstallButton;

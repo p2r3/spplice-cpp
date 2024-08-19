@@ -37,6 +37,11 @@
 }
 #MenuTitle {
 	color: #17C0E9;
+}
+* {
+	gridline-color: #000000;
+	border-color: #000000;
+	outline-color: #000000;
 }</string>
   </property>
   <widget class="QWidget" name="CentralWidget">
