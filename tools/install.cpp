@@ -19,6 +19,7 @@
 #include <tlhelp32.h>
 #include <psapi.h>
 #else
+#include <sys/stat.h>
 #include <unistd.h>
 #endif
 
@@ -87,7 +88,7 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
 
 // Retrieves the path to a process executable using its name
 #ifndef TARGET_WINDOWS
-std::wstring ToolsInstall::getProcessPath (const std::string &processName) {
+std::string ToolsInstall::getProcessPath (const std::string &processName) {
 
   std::string executablePath = "";
 
@@ -401,8 +402,42 @@ bool unlinkDirectory (const std::filesystem::path target) {
 }
 #endif
 
+#ifndef TARGET_WINDOWS
+bool isDirectoryLink (const std::filesystem::path linkName) {
+
+  struct stat path_stat;
+  if (lstat(linkName.c_str(), &path_stat) != 0) {
+    std::cerr << "Failed to stat path " << linkName << std::endl;
+    return false;
+  }
+  return S_ISLNK(path_stat.st_mode);
+
+}
+#else
+bool isDirectoryLink (const std::filesystem::path linkName) {
+
+  DWORD attributes = GetFileAttributesW(linkName.wstring().c_str());
+
+  if (attributes == INVALID_FILE_ATTRIBUTES) {
+    std::cerr << "Failed to get file attributes for " << linkName << std::endl;
+    return false;
+  }
+
+  if (!(attributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
+    return false;
+  }
+  return true;
+
+}
+#endif
+
 // Installs the package located at the temporary directory (TEMP_DIR/current_package)
-std::pair<bool, std::wstring> ToolsInstall::installTempFile () {
+#ifndef TARGET_WINDOWS
+std::pair<bool, std::string> ToolsInstall::installTempFile ()
+#else
+std::pair<bool, std::wstring> ToolsInstall::installTempFile ()
+#endif
+{
 
   // Extract the package to a temporary directory
   const std::filesystem::path tmpPackageFile = TEMP_DIR / "current_package";
@@ -411,7 +446,11 @@ std::pair<bool, std::wstring> ToolsInstall::installTempFile () {
   std::filesystem::create_directories(tmpPackageDirectory);
 
   if (!extractLocalFile(tmpPackageFile, tmpPackageDirectory)) {
+#ifndef TARGET_WINDOWS
+    return std::pair<bool, std::string> (false, "Failed to extract package.");
+#else
     return std::pair<bool, std::wstring> (false, L"Failed to extract package.");
+#endif
   }
   std::filesystem::remove(tmpPackageFile);
 
@@ -421,36 +460,76 @@ std::pair<bool, std::wstring> ToolsInstall::installTempFile () {
 
   // Start Portal 2
   if (!startPortal2()) {
+#ifndef TARGET_WINDOWS
+    return std::pair<bool, std::string> (false, "Failed to start Portal 2. Is Steam running?");
+#else
     return std::pair<bool, std::wstring> (false, L"Failed to start Portal 2. Is Steam running?");
+#endif
   }
 
   // Find the Portal 2 game files path
+#ifndef TARGET_WINDOWS
+  std::string gameProcessPath = "";
+  while (gameProcessPath.length() == 0) {
+    gameProcessPath = ToolsInstall::getProcessPath("portal2_linux");
+  }
+#else
   std::wstring gameProcessPath = L"";
   while (gameProcessPath.length() == 0) {
-#ifndef TARGET_WINDOWS
-    gameProcessPath = ToolsInstall::getProcessPath("portal2_linux");
-#else
     gameProcessPath = ToolsInstall::getProcessPath("portal2.exe");
-#endif
   }
+#endif
+
   std::filesystem::path gamePath = std::filesystem::path(gameProcessPath).parent_path();
   std::cout << "Found Portal 2 at " << gamePath << std::endl;
 
-  // Link the extracted package files to the destination tempcontent directory
   std::filesystem::path tempcontentPath = gamePath / "portal2_tempcontent";
+
+  // Handle an existing tempcontent directory
+  if (std::filesystem::exists(tempcontentPath)) {
+    if (isDirectoryLink(tempcontentPath)) {
+      // If it's a symlink or junction, just remove it
+      unlinkDirectory(tempcontentPath);
+    } else {
+      // If it's an actual file/directory, move it away to be safe
+      std::filesystem::path tempcontentBackupPath = gamePath.parent_path() / ".spplice_tempcontent_backup";
+      std::filesystem::create_directories(tempcontentBackupPath);
+      // Check for the next available backup slot
+      for (int i = 1; i <= 64; i ++) {
+        std::filesystem::path newPath = tempcontentBackupPath / ("portal2_tempcontent_" + i);
+        if (std::filesystem::exists(newPath)) continue;
+        std::filesystem::rename(tempcontentPath, newPath);
+      }
+    }
+  }
+
+  // Link the extracted package files to the destination tempcontent directory
   if (!linkDirectory(tmpPackageDirectory, tempcontentPath)) {
+#ifndef TARGET_WINDOWS
+    return std::pair<bool, std::string> (false, "Failed to link package files to portal2_tempcontent.");
+#else
     return std::pair<bool, std::wstring> (false, L"Failed to link package files to portal2_tempcontent.");
+#endif
   }
 
   // Link the soundcache from base Portal 2 to skip waiting for it to generate
   linkFile(gamePath / "portal2" / "maps" / "soundcache" / "_master.cache", tempcontentPath / "maps" / "soundcache" / "_master.cache");
 
   // Report install success to the UI
+#ifndef TARGET_WINDOWS
+  return std::pair<bool, std::string> (true, gamePath.string());
+#else
   return std::pair<bool, std::wstring> (true, gamePath.wstring());
+#endif
 
 }
 
-void ToolsInstall::Uninstall (const std::wstring &gamePath) {
+#ifndef TARGET_WINDOWS
+void ToolsInstall::Uninstall (const std::string &gamePath)
+#else
+void ToolsInstall::Uninstall (const std::wstring &gamePath)
+#endif
+{
 
   // Remove the tempcontent directory link
   const std::filesystem::path tempcontentPath = std::filesystem::path(gamePath) / "portal2_tempcontent";

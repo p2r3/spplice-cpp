@@ -171,11 +171,19 @@ int main (int argc, char *argv[]) {
   window.show();
 
   // Ensure that no package is installed if Portal 2 is running when exiting Spplice
+#ifndef TARGET_WINDOWS
   std::atexit([]() {
-    const std::wstring gameProcessPath = ToolsInstall::getProcessPath("portal2_linux");
+    const std::string gameProcessPath = ToolsInstall::getProcessPath("portal2_linux");
+    if (gameProcessPath.length() == 0) return;
+    ToolsInstall::Uninstall((std::filesystem::path(gameProcessPath).parent_path()).string());
+  });
+#else
+  std::atexit([]() {
+    const std::wstring gameProcessPath = ToolsInstall::getProcessPath("portal2.exe");
     if (gameProcessPath.length() == 0) return;
     ToolsInstall::Uninstall((std::filesystem::path(gameProcessPath).parent_path()).wstring());
   });
+#endif
 
   return app.exec();
 
