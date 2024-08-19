@@ -16,7 +16,7 @@ if [ ! -d "./qt5-static" ]; then
     ./qt5setup.sh --win
   else
     ./qt5setup.sh
-  done
+  fi
 fi
 
 # Compile UI files into headers.
@@ -36,7 +36,7 @@ if [ "$target_windows" == true ]; then
   cmake -DCMAKE_TOOLCHAIN_FILE="../windows.cmake" ..
 else
   cmake ..
-done
+fi
 
 make
 cd ..
