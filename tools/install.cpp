@@ -256,15 +256,83 @@ bool linkDirectory (const std::filesystem::path target, const std::filesystem::p
 
 }
 #else
+#define REPARSE_MOUNTPOINT_HEADER_SIZE 8
+typedef struct {
+  DWORD ReparseTag;
+  DWORD ReparseDataLength;
+  WORD Reserved;
+  WORD ReparseTargetLength;
+  WORD ReparseTargetMaximumLength;
+  WORD Reserved1;
+  WCHAR ReparseTarget[1];
+} REPARSE_MOUNTPOINT_DATA_BUFFER, *PREPARSE_MOUNTPOINT_DATA_BUFFER;
+
+// Taken from: http://www.flexhex.com/docs/articles/hard-links.phtml
+// Modified for error handling and wstring support
 bool linkDirectory (const std::filesystem::path target, const std::filesystem::path linkName) {
 
-  std::string command = "mklink /J \"" + linkName.string() + "\" \"" + target.string() + "\"";
-  int result = std::system(command.c_str());
+  LPCWSTR szJunction = linkName.c_str();
+  LPCWSTR szPath = target.c_str();
 
-  if (result != 0) {
-    std::cerr << "Failed to create junction " << target << " -> " << linkName << ": exit code " << result << std::endl;
+  BYTE buf[sizeof(REPARSE_MOUNTPOINT_DATA_BUFFER) + MAX_PATH * sizeof(WCHAR)];
+  REPARSE_MOUNTPOINT_DATA_BUFFER& ReparseBuffer = (REPARSE_MOUNTPOINT_DATA_BUFFER&)buf;
+  wchar_t szTarget[MAX_PATH] = L"\\??\\";
+
+  wcscat(szTarget, szPath);
+  wcscat(szTarget, L"\\");
+
+  if (!CreateDirectoryW(szJunction, NULL)) {
+    std::cerr << "Failed to create directory for junction " << linkName << ": " << GetLastError() << std::endl;
     return false;
   }
+
+  // Obtain SE_RESTORE_NAME privilege (required for opening a directory)
+  HANDLE hToken = NULL;
+  TOKEN_PRIVILEGES tp;
+  if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &hToken)) {
+    std::cerr << "Failed to open process token: " << GetLastError() << std::endl;
+    return false;
+  }
+  if (!LookupPrivilegeValue(NULL, SE_RESTORE_NAME, &tp.Privileges[0].Luid)) {
+    std::cerr << "Failed to look up SE_RESTORE_NAME privilege: " << GetLastError() << std::endl;
+    return false;
+  }
+  tp.PrivilegeCount = 1;
+  tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+  if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL)) {
+    std::cerr << "Failed to adjust process privileges: " << GetLastError() << std::endl;
+    return false;
+  }
+  if (hToken) CloseHandle(hToken);
+
+  HANDLE hDir = CreateFileW(szJunction, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  if (hDir == INVALID_HANDLE_VALUE) {
+    std::cerr << "Failed to create junction file " << linkName << ": " << GetLastError() << std::endl;
+    return false;
+  }
+
+  memset(buf, 0, sizeof(buf));
+  ReparseBuffer.ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
+
+  wcsncpy(ReparseBuffer.ReparseTarget, szTarget, MAX_PATH);
+  ReparseBuffer.ReparseTarget[MAX_PATH - 1] = L'\0';
+  int len = wcslen(ReparseBuffer.ReparseTarget) + 1;
+
+  ReparseBuffer.ReparseTargetMaximumLength = (len--) * sizeof(WCHAR);
+  ReparseBuffer.ReparseTargetLength = len * sizeof(WCHAR);
+  ReparseBuffer.ReparseDataLength = ReparseBuffer.ReparseTargetLength + 12;
+
+  DWORD dwRet;
+  if (!DeviceIoControl(hDir, FSCTL_SET_REPARSE_POINT, &ReparseBuffer, ReparseBuffer.ReparseDataLength+REPARSE_MOUNTPOINT_HEADER_SIZE, NULL, 0, &dwRet, NULL)) {
+    DWORD dr = GetLastError();
+    CloseHandle(hDir);
+    RemoveDirectoryW(szJunction);
+
+    std::cerr << "Failed to create reparse point " << target << " -> " << linkName << ": " << dr << std::endl;
+    return false;
+  }
+
+  CloseHandle(hDir);
   return true;
 
 }
