@@ -38,10 +38,41 @@
 #MenuTitle {
 	color: #17C0E9;
 }
-* {
-	gridline-color: #000000;
-	border-color: #000000;
-	outline-color: #000000;
+
+QScrollBar:vertical {
+  background: #000000;
+  border-radius: 5px;
+  width: 13px;
+}
+
+QScrollBar::handle:vertical {
+  background: #808080;
+  border-radius: 5px;
+  width: 25px;
+  min-height: 10px;
+}
+QScrollBar::handle:vertical::hover {
+	background: #CCCCCC;
+}
+
+QScrollBar::add-page:vertical {
+  border: none;
+  background: #000000;
+}
+
+QScrollBar::sub-page:vertical {
+  border: none;
+  background: #000000;
+}
+
+QScrollBar::add-line:vertical {
+  border: none;
+  background: #000000;
+}
+
+QScrollBar::sub-line:vertical {
+  border: none;
+  background: #000000;
 }</string>
   </property>
   <widget class="QWidget" name="CentralWidget">
@@ -94,8 +125,14 @@
       <property name="styleSheet">
        <string notr="true"/>
       </property>
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
       <property name="verticalScrollBarPolicy">
-       <enum>Qt::ScrollBarAlwaysOff</enum>
+       <enum>Qt::ScrollBarAsNeeded</enum>
       </property>
       <property name="widgetResizable">
        <bool>true</bool>
@@ -105,13 +142,20 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>980</width>
-         <height>516</height>
+         <width>982</width>
+         <height>518</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="bottomMargin">
+         <number>9</number>
+        </property>
         <item>
-         <layout class="QVBoxLayout" name="PackageListLayout"/>
+         <layout class="QVBoxLayout" name="PackageListLayout">
+          <property name="bottomMargin">
+           <number>65</number>
+          </property>
+         </layout>
         </item>
        </layout>
       </widget>
