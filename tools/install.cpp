@@ -175,7 +175,7 @@ std::wstring ToolsInstall::getProcessPath (const std::string &processName) {
 #ifndef TARGET_WINDOWS
 bool startPortal2 () {
 
-  std::wstring steamPath = ToolsInstall::getProcessPath("steam");
+  std::string steamPath = ToolsInstall::getProcessPath("steam");
   if (steamPath.length() == 0) {
     std::cerr << "Failed to find Steam process path. Is Steam running?" << std::endl;
     return false;
