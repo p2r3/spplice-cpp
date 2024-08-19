@@ -13,11 +13,15 @@
 #include <QObject>
 #include "ui/mainwindow.h"
 #include "ui/packageitem.h"
-// Global CURL initialization
-#include "curl/curl.h"
 
 // Project globals
 #include "globals.h"
+
+#ifndef TARGET_WINDOWS
+// Global CURL initialization
+#include "curl/curl.h"
+#endif
+
 // Project-related tools, split up into files
 #include "tools/curl.h"
 #include "tools/qt.h"
@@ -52,8 +56,10 @@ int main (int argc, char *argv[]) {
   Ui::MainWindow windowUI;
   windowUI.setupUi(&window);
 
+#ifndef TARGET_WINDOWS
   // Initialize libcurl globally
   curl_global_init(CURL_GLOBAL_DEFAULT);
+#endif
 
   // Create a vector containing all packages from all repositories
   std::vector<ToolsPackage::PackageData> allPackages;
@@ -133,7 +139,7 @@ int main (int argc, char *argv[]) {
     worker->moveToThread(workerThread);
 
     std::string imageURL = package.icon;
-    std::string imagePath = TEMP_DIR / (package.name + "_icon");
+    std::string imagePath = (TEMP_DIR / (package.name + "_icon")).string();
     QSize iconSize = itemUI.PackageIcon->size();
 
     // Connect the task of fetching the icon to the worker
@@ -155,8 +161,10 @@ int main (int argc, char *argv[]) {
 
   }
 
+#ifndef TARGET_WINDOWS
   // Clean up CURL
   curl_global_cleanup();
+#endif
 
   // Display the main application window
   window.setWindowTitle("Spplice");
@@ -164,9 +172,9 @@ int main (int argc, char *argv[]) {
 
   // Ensure that no package is installed if Portal 2 is running when exiting Spplice
   std::atexit([]() {
-    const std::string gameProcessPath = ToolsInstall::getProcessPath("portal2_linux");
-    if (gameProcessPath == "") return;
-    ToolsInstall::Uninstall(std::filesystem::path(gameProcessPath).parent_path());
+    const std::wstring gameProcessPath = ToolsInstall::getProcessPath("portal2_linux");
+    if (gameProcessPath.length() == 0) return;
+    ToolsInstall::Uninstall((std::filesystem::path(gameProcessPath).parent_path()).wstring());
   });
 
   return app.exec();

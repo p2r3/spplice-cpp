@@ -6,6 +6,7 @@
 sudo apt install \
   libcurl4-openssl-dev \
   libarchive-dev \
+  libxml2-dev \
   liblzma-dev \
   rapidjson-dev \
   libacl1-dev \

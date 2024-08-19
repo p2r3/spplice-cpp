@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include "curl/curl.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "curl.h" // ToolsCURL

@@ -62,21 +62,29 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets)
 target_link_libraries(SppliceCPP Qt5::Widgets)
 
 # Finally, link our project's individual dependencies.
-# First, locate the statically linkable files for these, as they might be missing on some systems.
-find_library(libicuuc_STATIC libicuuc.a)
-find_library(libicudata_STATIC libicudata.a)
-find_library(libacl_STATIC libacl.a)
-find_library(libarchive_STATIC libarchive.a)
-find_library(liblzma_STATIC liblzma.a)
+if (SPPLICE_TARGET_WINDOWS) # If building for Windows:
 
-# Then, link the libraries to our binary.
-target_link_libraries(SppliceCPP
-  # Dynamically linked libraries
-  curl
-  # Statically linked libraries
-  ${libicuuc_STATIC}
-  ${libicudata_STATIC}
-  ${libacl_STATIC}
-  ${libarchive_STATIC}
-  ${liblzma_STATIC}
-)
+  target_link_libraries(SppliceCPP
+    "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/archive.dll"
+    "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/liblzma.dll"
+    "libwininet.a"
+  )
+
+else() # If building for Linux:
+
+  # Locate the statically linkable files for these, as they might be missing on some systems.
+  find_library(libacl_STATIC libacl.a)
+  find_library(libarchive_STATIC libarchive.a)
+  find_library(liblzma_STATIC liblzma.a)
+
+  # Then, link the libraries to our binary.
+  target_link_libraries(SppliceCPP
+    # Dynamically linked libraries
+    curl
+    # Statically linked libraries
+    ${libacl_STATIC}
+    ${libarchive_STATIC}
+    ${liblzma_STATIC}
+  )
+
+endif()

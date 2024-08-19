@@ -57,11 +57,11 @@ void PackageItemWorker::installPackage (const std::string &fileURL) {
   ToolsCURL::downloadFile(fileURL, TEMP_DIR / "current_package");
 
   // Attempt installation
-  std::pair<bool, std::string> installationResult = ToolsInstall::installTempFile();
+  std::pair<bool, std::wstring> installationResult = ToolsInstall::installTempFile();
 
   // If installation failed, display error and exit early
   if (installationResult.first == false) {
-    ToolsQT::displayErrorPopup("Installation aborted", installationResult.second);
+    ToolsQT::displayErrorPopup("Installation aborted", std::string(installationResult.second.begin(), installationResult.second.end()));
 
     SPPLICE_INSTALL_STATE = 0;
     emit installStateUpdate();
@@ -73,7 +73,11 @@ void PackageItemWorker::installPackage (const std::string &fileURL) {
   emit installStateUpdate();
 
   // Stall until Portal 2 has been closed
-  while (ToolsInstall::getProcessPath("portal2_linux") != "") {
+#ifndef TARGET_WINDOWS
+  while (ToolsInstall::getProcessPath("portal2_linux") != L"") {
+#else
+  while (ToolsInstall::getProcessPath("portal2.exe") != L"") {
+#endif
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
   }
 

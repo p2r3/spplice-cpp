@@ -8,9 +8,9 @@
 class ToolsInstall {
   public:
     static bool extractLocalFile (const std::filesystem::path path, const std::filesystem::path dest);
-    static std::string getProcessPath (const std::string &processName);
-    static std::pair<bool, std::string> installTempFile ();
-    static void Uninstall (const std::string &gamePath);
+    static std::wstring getProcessPath (const std::string &processName);
+    static std::pair<bool, std::wstring> installTempFile ();
+    static void Uninstall (const std::wstring &gamePath);
 };
 
 #endif

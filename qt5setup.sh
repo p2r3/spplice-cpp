@@ -1,5 +1,20 @@
 #!/bin/bash
 
+target_windows=false
+
+for arg in "$@"; do
+  if [ "$arg" == "--win" ]; then
+    target_windows=true
+    break
+  fi
+done
+
+if [ "$target_windows" == true ]; then
+  echo "Building Qt5 for Windows..."
+else
+  echo "Building Qt5 for Linux..."
+fi
+
 # Ensure a clean start.
 rm -rf ./qt5
 rm -rf ./qt5-static
@@ -31,19 +46,45 @@ cd build
 #   - Include the QWidgets component - that's what we're here for;
 #   - Skip building the Qt webengine, tools, tests, and examples;
 #   - Install into the local "qt5-static" directory, later used to build the rest of the project.
-../configure -release -opensource -confirm-license \
-  -static \
-  -no-pch \
-  -qt-libjpeg -qt-libpng -no-gif \
-  -qt-pcre \
-  -bundled-xcb-xinput \
-  -no-icu \
-  -no-sqlite \
-  -optimize-size \
-  -ltcg \
-  -widgets \
-  -skip webengine -nomake tools -nomake tests -nomake examples \
-  -prefix "$PWD/../../qt5-static"
+if [ "$target_windows" == false ]; then
+
+  ../configure -release -opensource -confirm-license \
+    -static \
+    -no-pch \
+    -qt-libjpeg -qt-libpng -no-gif \
+    -qt-pcre \
+    -bundled-xcb-xinput \
+    -no-icu \
+    -no-sqlite \
+    -optimize-size \
+    -ltcg \
+    -widgets \
+    -skip webengine -nomake tools -nomake tests -nomake examples \
+    -prefix "$PWD/../../qt5-static"
+
+else
+
+  export HOST_COMPILER=g++
+  export CROSS_COMPILE=x86_64-w64-mingw32-
+
+  ../configure -release -opensource -confirm-license \
+    -static \
+    -qt-libjpeg -qt-libpng -no-gif \
+    -qt-pcre \
+    -no-icu \
+    -no-sqlite \
+    -optimize-size \
+    -widgets \
+    -skip webengine -nomake tools -nomake tests -nomake examples \
+    -prefix "$PWD/../../qt5-static" \
+    -platform linux-g++ \
+    -xplatform win32-g++ \
+    -device-option CROSS_COMPILE=$CROSS_COMPILE \
+    -device-option HOST_COMPILER=$HOST_COMPILER \
+    -opengl desktop \
+    -silent
+
+fi
 
 # Run `make` with as many CPU threads as are available.
 make -j$(nproc)
@@ -51,6 +92,10 @@ make install
 
 # Run an admittedly dirty s/e/d to reroute the find_library CMake function.
 # This lets us cherry-pick what to do with some Qt dependencies at the last minute.
-cd ../../qt5-static
-find ./ -type f -exec sed -i "s/find_library/find_library_override/g" {} \;
-cd ..
+if [ "$target_windows" == false ]; then
+  cd ../../qt5-static
+  find ./ -type f -exec sed -i "s/find_library/find_library_override/g" {} \;
+  cd ..
+else
+  cd ..
+fi
