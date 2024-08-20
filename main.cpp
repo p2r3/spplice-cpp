@@ -11,8 +11,10 @@
 #include <QFontDatabase>
 #include <QThread>
 #include <QObject>
+#include <QDialog>
 #include "ui/mainwindow.h"
 #include "ui/packageitem.h"
+#include "ui/packageinfo.h"
 
 // Project globals
 #include "globals.h"
@@ -155,6 +157,31 @@ int main (int argc, char *argv[]) {
 
     // Start the worker thread
     workerThread->start();
+
+    // Connect the "Read more" button
+    QObject::connect(itemUI.PackageInfoButton, &QPushButton::clicked, [=]() {
+
+      QDialog *dialog = new QDialog;
+      Ui::PackageInfo dialogUI;
+      dialogUI.setupUi(dialog);
+
+      // Set text data (title, author, description)
+      dialogUI.PackageTitle->setText(QString::fromStdString(package.title));
+      dialogUI.PackageAuthor->setText(QString::fromStdString("By " + package.author));
+      dialogUI.PackageDescription->setText(QString::fromStdString(package.description));
+
+      // Set the icon - assume the image has already been downloaded
+      std::string imagePath = (TEMP_DIR / (package.name + "_icon")).string();
+      QSize iconSize = dialogUI.PackageIcon->size();
+
+      QPixmap iconPixmap = QPixmap(QString::fromStdString(imagePath)).scaled(iconSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+      QPixmap iconRoundedPixmap = ToolsQT::getRoundedPixmap(iconPixmap, 10);
+      dialogUI.PackageIcon->setPixmap(iconRoundedPixmap);
+
+      dialog->setWindowTitle(QString::fromStdString("Details for " + package.title));
+      dialog->exec();
+
+    });
 
     // Sleep for a few milliseconds on each package to reduce strain on the network
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
