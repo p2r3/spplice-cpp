@@ -68,7 +68,6 @@ else
   export CROSS_COMPILE=x86_64-w64-mingw32-
 
   ../configure -release -opensource -confirm-license \
-    -static \
     -qt-libjpeg -qt-libpng -no-gif \
     -qt-pcre \
     -no-icu \
