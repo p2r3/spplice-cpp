@@ -83,6 +83,7 @@ std::string ToolsCURL::downloadString (const std::string &url) {
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ToolsCURL::curlStringWriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
   // Perform the request
   CURLcode response = curl_easy_perform(curl);
