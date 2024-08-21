@@ -166,7 +166,13 @@ int main (int argc, char *argv[]) {
       std::filesystem::path imagePath = TEMP_DIR / std::to_string(imageURLHash);
 
       QSize iconSize = dialogUI.PackageIcon->size();
-      QPixmap iconPixmap = QPixmap(QString::fromStdString(imagePath)).scaled(iconSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
+#ifndef TARGET_WINDOWS
+      QPixmap iconPixmap = QPixmap(QString::fromStdString(imagePath.string())).scaled(iconSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+#else
+      QPixmap iconPixmap = QPixmap(QString::fromStdWString(imagePath.wstring())).scaled(iconSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+#endif
+
       QPixmap iconRoundedPixmap = ToolsQT::getRoundedPixmap(iconPixmap, 10);
       dialogUI.PackageIcon->setPixmap(iconRoundedPixmap);
 
