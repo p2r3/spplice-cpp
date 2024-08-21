@@ -6,6 +6,7 @@
 #include <thread>
 #include <chrono>
 #include <cstdlib>
+#include <functional>
 // Main window dependencies
 #include <QApplication>
 #include <QFontDatabase>
@@ -32,7 +33,7 @@
 #include "tools/repo.h"
 
 const char *repositoryURLs[] = {
-  "https://p2r3.com/spplice/repo2/index.json"
+  "https://p2r3.github.io/spplice-repo/index.json"
 };
 
 int main (int argc, char *argv[]) {
@@ -68,11 +69,6 @@ int main (int argc, char *argv[]) {
     std::vector<ToolsPackage::PackageData> repository = ToolsRepo::fetchRepository(url);
     allPackages.insert(allPackages.end(), repository.begin(), repository.end());
   }
-
-  // Sort packages by weight
-  std::sort(allPackages.begin(), allPackages.end(), [](ToolsPackage::PackageData &a, ToolsPackage::PackageData &b) {
-    return a.weight > b.weight;
-  });
 
   // Generate a PackageItem for each package
   for (auto package : allPackages) {
@@ -141,7 +137,9 @@ int main (int argc, char *argv[]) {
     worker->moveToThread(workerThread);
 
     std::string imageURL = package.icon;
-    std::string imagePath = (TEMP_DIR / (package.name + "_icon")).string();
+    size_t imageURLHash = std::hash<std::string>{}(imageURL);
+    std::string imagePath = (TEMP_DIR / std::to_string(imageURLHash)).string();
+
     QSize iconSize = itemUI.PackageIcon->size();
 
     // Connect the task of fetching the icon to the worker
@@ -171,9 +169,7 @@ int main (int argc, char *argv[]) {
       dialogUI.PackageDescription->setText(QString::fromStdString(package.description));
 
       // Set the icon - assume the image has already been downloaded
-      std::string imagePath = (TEMP_DIR / (package.name + "_icon")).string();
       QSize iconSize = dialogUI.PackageIcon->size();
-
       QPixmap iconPixmap = QPixmap(QString::fromStdString(imagePath)).scaled(iconSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
       QPixmap iconRoundedPixmap = ToolsQT::getRoundedPixmap(iconPixmap, 10);
       dialogUI.PackageIcon->setPixmap(iconRoundedPixmap);

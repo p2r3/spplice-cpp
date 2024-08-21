@@ -50,6 +50,7 @@ bool ToolsCURL::downloadFile (const std::string &url, const std::filesystem::pat
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ToolsCURL::curlFileWriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ofs);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
   CURLcode response = curl_easy_perform(curl);
 
