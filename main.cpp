@@ -86,10 +86,7 @@ int main (int argc, char *argv[]) {
 
     // Connect the install button
     QPushButton *installButton = itemUI.PackageInstallButton;
-    std::string fileURL = package.file;
-    std::string version = package.version;
-
-    QObject::connect(installButton, &QPushButton::clicked, [installButton, fileURL, version]() {
+    QObject::connect(installButton, &QPushButton::clicked, [installButton, package]() {
 
       // Create a thread for asynchronous installation
       PackageItemWorker *worker = new PackageItemWorker;
@@ -97,8 +94,8 @@ int main (int argc, char *argv[]) {
       worker->moveToThread(workerThread);
 
       // Connect the task of installing the package to the worker
-      QObject::connect(workerThread, &QThread::started, worker, [worker, fileURL, version]() {
-        QMetaObject::invokeMethod(worker, "installPackageURL", Q_ARG(std::string, fileURL), Q_ARG(std::string, version));
+      QObject::connect(workerThread, &QThread::started, worker, [worker, package]() {
+        QMetaObject::invokeMethod(worker, "installPackage", Q_ARG(ToolsPackage::PackageData, package));
       });
 
       // Update the button text based on the installation state
@@ -137,15 +134,10 @@ int main (int argc, char *argv[]) {
     QThread *workerThread = new QThread;
     worker->moveToThread(workerThread);
 
-    std::string imageURL = package.icon;
-    size_t imageURLHash = std::hash<std::string>{}(imageURL);
-    std::string imagePath = TEMP_DIR / std::to_string(imageURLHash);
-
-    QSize iconSize = itemUI.PackageIcon->size();
-
     // Connect the task of fetching the icon to the worker
-    QObject::connect(workerThread, &QThread::started, worker, [worker, imageURL, imagePath, iconSize]() {
-      QMetaObject::invokeMethod(worker, "getPackageIcon", Q_ARG(std::string, imageURL), Q_ARG(std::filesystem::path, imagePath), Q_ARG(QSize, iconSize));
+    QSize iconSize = itemUI.PackageIcon->size();
+    QObject::connect(workerThread, &QThread::started, worker, [worker, package, iconSize]() {
+      QMetaObject::invokeMethod(worker, "getPackageIcon", Q_ARG(ToolsPackage::PackageData, package), Q_ARG(QSize, iconSize));
     });
     QObject::connect(worker, &PackageItemWorker::packageIconResult, itemUI.PackageIcon, &QLabel::setPixmap);
 
@@ -158,7 +150,7 @@ int main (int argc, char *argv[]) {
     workerThread->start();
 
     // Connect the "Read more" button
-    QObject::connect(itemUI.PackageInfoButton, &QPushButton::clicked, [=]() {
+    QObject::connect(itemUI.PackageInfoButton, &QPushButton::clicked, [package]() {
 
       QDialog *dialog = new QDialog;
       Ui::PackageInfo dialogUI;
@@ -170,6 +162,9 @@ int main (int argc, char *argv[]) {
       dialogUI.PackageDescription->setText(QString::fromStdString(package.description));
 
       // Set the icon - assume the image has already been downloaded
+      size_t imageURLHash = std::hash<std::string>{}(package.icon);
+      std::filesystem::path imagePath = TEMP_DIR / std::to_string(imageURLHash);
+
       QSize iconSize = dialogUI.PackageIcon->size();
       QPixmap iconPixmap = QPixmap(QString::fromStdString(imagePath)).scaled(iconSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
       QPixmap iconRoundedPixmap = ToolsQT::getRoundedPixmap(iconPixmap, 10);
