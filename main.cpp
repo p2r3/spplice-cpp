@@ -87,8 +87,9 @@ int main (int argc, char *argv[]) {
     // Connect the install button
     QPushButton *installButton = itemUI.PackageInstallButton;
     std::string fileURL = package.file;
+    std::string version = package.version;
 
-    QObject::connect(installButton, &QPushButton::clicked, [fileURL, installButton]() {
+    QObject::connect(installButton, &QPushButton::clicked, [installButton, fileURL, version]() {
 
       // Create a thread for asynchronous installation
       PackageItemWorker *worker = new PackageItemWorker;
@@ -96,8 +97,8 @@ int main (int argc, char *argv[]) {
       worker->moveToThread(workerThread);
 
       // Connect the task of installing the package to the worker
-      QObject::connect(workerThread, &QThread::started, worker, [worker, fileURL]() {
-        QMetaObject::invokeMethod(worker, "installPackage", Q_ARG(std::string, fileURL));
+      QObject::connect(workerThread, &QThread::started, worker, [worker, fileURL, version]() {
+        QMetaObject::invokeMethod(worker, "installPackageURL", Q_ARG(std::string, fileURL), Q_ARG(std::string, version));
       });
 
       // Update the button text based on the installation state
@@ -138,13 +139,13 @@ int main (int argc, char *argv[]) {
 
     std::string imageURL = package.icon;
     size_t imageURLHash = std::hash<std::string>{}(imageURL);
-    std::string imagePath = (TEMP_DIR / std::to_string(imageURLHash)).string();
+    std::string imagePath = TEMP_DIR / std::to_string(imageURLHash);
 
     QSize iconSize = itemUI.PackageIcon->size();
 
     // Connect the task of fetching the icon to the worker
     QObject::connect(workerThread, &QThread::started, worker, [worker, imageURL, imagePath, iconSize]() {
-      QMetaObject::invokeMethod(worker, "getPackageIcon", Q_ARG(std::string, imageURL), Q_ARG(std::string, imagePath), Q_ARG(QSize, iconSize));
+      QMetaObject::invokeMethod(worker, "getPackageIcon", Q_ARG(std::string, imageURL), Q_ARG(std::filesystem::path, imagePath), Q_ARG(QSize, iconSize));
     });
     QObject::connect(worker, &PackageItemWorker::packageIconResult, itemUI.PackageIcon, &QLabel::setPixmap);
 

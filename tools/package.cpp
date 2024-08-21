@@ -1,8 +1,10 @@
 #include <iostream>
+#include <fstream>
 #include <utility>
 #include <thread>
 #include <chrono>
 #include <string>
+#include <functional>
 #include <QPixmap>
 #include "rapidjson/document.h"
 
@@ -18,12 +20,17 @@
 ToolsPackage::PackageData::PackageData (rapidjson::Value &package) {
   this->title = package["title"].GetString();
   this->author = package["author"].GetString();
+  this->description = package["description"].GetString();
+  this->version = package["version"].GetString();
   this->file = package["file"].GetString();
   this->icon = package["icon"].GetString();
-  this->description = package["description"].GetString();
+  rapidjson::Value &args = package["args"];
+  for (rapidjson::Value::ConstValueIterator itr = args.Begin(); itr != args.End(); ++itr) {
+    this->args.push_back(itr->GetString());
+  }
 }
 
-void PackageItemWorker::getPackageIcon (const std::string &imageURL, const std::string &imagePath, const QSize iconSize) {
+void PackageItemWorker::getPackageIcon (const std::string &imageURL, const std::filesystem::path imagePath, const QSize iconSize) {
 
   // Attempt the download 5 times before giving up
   for (int attempts = 0; attempts < 5; attempts ++) {
@@ -31,7 +38,11 @@ void PackageItemWorker::getPackageIcon (const std::string &imageURL, const std::
   }
 
   // Create a pixmap for the icon
-  QPixmap iconPixmap = QPixmap(QString::fromStdString(imagePath)).scaled(iconSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+#ifndef TARGET_WINDOWS
+  QPixmap iconPixmap = QPixmap(QString::fromStdString(imagePath.string())).scaled(iconSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+#else
+  QPixmap iconPixmap = QPixmap(QString::fromStdWString(imagePath.wstring())).scaled(iconSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+#endif
   QPixmap iconRoundedPixmap = ToolsQT::getRoundedPixmap(iconPixmap, 10);
 
   // Set the package icon
@@ -40,7 +51,7 @@ void PackageItemWorker::getPackageIcon (const std::string &imageURL, const std::
 
 };
 
-void PackageItemWorker::installPackage (const std::string &fileURL) {
+void PackageItemWorker::installPackageURL (const std::string &fileURL, const std::string &version) {
 
   // If a package is already installing (or installed), exit early
   if (SPPLICE_INSTALL_STATE != 0) {
@@ -51,14 +62,53 @@ void PackageItemWorker::installPackage (const std::string &fileURL) {
   SPPLICE_INSTALL_STATE = 1;
   emit installStateUpdate();
 
-  // Download the package's .tar.xz file into its temporary path
-  ToolsCURL::downloadFile(fileURL, TEMP_DIR / "current_package");
+  // Generate a hash from the file's URL to use as a file name
+  size_t fileURLHash = std::hash<std::string>{}(fileURL);
+  const std::filesystem::path filePath = TEMP_DIR / std::to_string(fileURLHash);
 
-  // Attempt installation
+  // Check if we have an up-to-date cache of the package file
+  bool cacheFound = false;
+  if (std::filesystem::exists(filePath)) {
+
+    std::ifstream versionFile(filePath.string() + ".ver");
+    std::string localVersion = "";
+
+    if (versionFile.is_open()) {
+      std::getline(versionFile, localVersion);
+      versionFile.close();
+    }
+
+    if (localVersion == version) {
+      cacheFound = true;
+      std::cout << "Cached package found, skipping download" << std::endl;
+    }
+
+  }
+
+  // If the cache was outdated (or not present), download the package file
+  if (!cacheFound) {
+
+    if (!ToolsCURL::downloadFile(fileURL, filePath)) {
+      ToolsQT::displayErrorPopup("Installation aborted", "Failed to download package file.");
+      return;
+    }
+
+    // Update the version file
+    std::ofstream versionFile(filePath.string() + ".ver");
+    if (versionFile.is_open()) {
+      versionFile << version;
+      versionFile.close();
+    } else {
+      std::cout << "Couldn't open package version file for writing" << std::endl;
+    }
+
+  }
+
+    // Attempt installation
 #ifndef TARGET_WINDOWS
-  std::pair<bool, std::string> installationResult = ToolsInstall::installTempFile();
+  std::pair<bool, std::string> installationResult = ToolsInstall::installPackageFile(filePath);
 #else
-  std::pair<bool, std::wstring> installationResult = ToolsInstall::installTempFile();
+  std::pair<bool, std::wstring> installationResult = ToolsInstall::installPackageFile(filePath);
 #endif
 
   // If installation failed, display error and exit early
@@ -71,6 +121,8 @@ void PackageItemWorker::installPackage (const std::string &fileURL) {
 
     SPPLICE_INSTALL_STATE = 0;
     emit installStateUpdate();
+
+    std::filesystem::remove(filePath);
 
     return;
   }

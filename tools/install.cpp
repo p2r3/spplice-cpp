@@ -433,26 +433,26 @@ bool isDirectoryLink (const std::filesystem::path linkName) {
 
 // Installs the package located at the temporary directory (TEMP_DIR/current_package)
 #ifndef TARGET_WINDOWS
-std::pair<bool, std::string> ToolsInstall::installTempFile ()
+std::pair<bool, std::string> ToolsInstall::installPackageFile (const std::filesystem::path packageFile)
 #else
-std::pair<bool, std::wstring> ToolsInstall::installTempFile ()
+std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::filesystem::path packageFile)
 #endif
 {
 
   // Extract the package to a temporary directory
-  const std::filesystem::path tmpPackageFile = TEMP_DIR / "current_package";
   const std::filesystem::path tmpPackageDirectory = TEMP_DIR / "tempcontent";
-
+  if (std::filesystem::exists(tmpPackageDirectory)) {
+    std::filesystem::remove_all(tmpPackageDirectory);
+  }
   std::filesystem::create_directories(tmpPackageDirectory);
 
-  if (!extractLocalFile(tmpPackageFile, tmpPackageDirectory)) {
+  if (!extractLocalFile(packageFile, tmpPackageDirectory)) {
 #ifndef TARGET_WINDOWS
     return std::pair<bool, std::string> (false, "Failed to extract package.");
 #else
     return std::pair<bool, std::wstring> (false, L"Failed to extract package.");
 #endif
   }
-  std::filesystem::remove(tmpPackageFile);
 
   // Ensure the existence of a soundcache directory
   std::filesystem::create_directories(tmpPackageDirectory / "maps");
