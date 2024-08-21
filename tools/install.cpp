@@ -15,12 +15,14 @@
 #include "qt.h" // ToolsQT
 
 #ifdef TARGET_WINDOWS
-#include <windows.h>
-#include <tlhelp32.h>
-#include <psapi.h>
+  #include <windows.h>
+  #include <tlhelp32.h>
+  #include <psapi.h>
+  #include <locale>
+  #include <codecvt>
 #else
-#include <sys/stat.h>
-#include <unistd.h>
+  #include <sys/stat.h>
+  #include <unistd.h>
 #endif
 
 // Definitions for this source file
@@ -173,7 +175,7 @@ std::wstring ToolsInstall::getProcessPath (const std::string &processName) {
 
 // Finds the Steam binary and uses it to start Portal 2
 #ifndef TARGET_WINDOWS
-bool startPortal2 () {
+bool startPortal2 (const std::vector<std::string> extraArgs) {
 
   std::string steamPath = ToolsInstall::getProcessPath("steam");
   if (steamPath.length() == 0) {
@@ -189,18 +191,33 @@ bool startPortal2 () {
 
   // This applies to the child process from fork()
   if (pid == 0) {
-    execl(steamPath.c_str(), steamPath.c_str(), "-applaunch", "620", "-tempcontent", "+alias", "cmd1", NULL);
 
-    // execl only returns on error
+    // Create a vector of arguments for the Steam call
+    std::vector<const char*> args;
+    args.push_back(steamPath.c_str());
+    args.push_back("-applaunch");
+    args.push_back("620");
+    args.push_back("-tempcontent");
+
+    // Append any additional package-specific arguments
+    for (const std::string &arg : extraArgs) {
+      args.push_back(arg.c_str());
+    }
+
+    args.push_back(nullptr);
+    execv(steamPath.c_str(), const_cast<char* const*>(args.data()));
+
+    // execv only returns on error
     std::cerr << "Failed to call Steam binary from fork." << std::endl;
     _exit(1);
+
   }
 
   return true;
 
 }
 #else
-bool startPortal2 () {
+bool startPortal2 (const std::vector<std::string> extraArgs) {
 
   std::wstring steamPath = ToolsInstall::getProcessPath("steam.exe");
   if (steamPath.length() == 0) {
@@ -217,7 +234,14 @@ bool startPortal2 () {
   si.dwFlags = STARTF_USESHOWWINDOW;
   si.wShowWindow = SW_HIDE;  // Hide the window for the detached process
 
-  std::wstring args = L"-applaunch 620 -tempcontent +alias cmd1";
+  std::wstring args = L"-applaunch 620 -tempcontent";
+
+  // Append any additional package-specific arguments
+  for (const std::string &arg : extraArgs) {
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring warg = converter.from_bytes(arg);
+    args += L" " + warg;
+  }
 
   // Create the process
   if (!CreateProcessW(
@@ -433,9 +457,9 @@ bool isDirectoryLink (const std::filesystem::path linkName) {
 
 // Installs the package located at the temporary directory (TEMP_DIR/current_package)
 #ifndef TARGET_WINDOWS
-std::pair<bool, std::string> ToolsInstall::installPackageFile (const std::filesystem::path packageFile)
+std::pair<bool, std::string> ToolsInstall::installPackageFile (const std::filesystem::path packageFile, const std::vector<std::string> args)
 #else
-std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::filesystem::path packageFile)
+std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::filesystem::path packageFile, const std::vector<std::string> args)
 #endif
 {
 
@@ -459,7 +483,7 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
   std::filesystem::create_directories(tmpPackageDirectory / "maps" / "soundcache");
 
   // Start Portal 2
-  if (!startPortal2()) {
+  if (!startPortal2(args)) {
 #ifndef TARGET_WINDOWS
     return std::pair<bool, std::string> (false, "Failed to start Portal 2. Is Steam running?");
 #else
