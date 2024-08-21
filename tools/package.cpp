@@ -30,15 +30,57 @@ ToolsPackage::PackageData::PackageData (rapidjson::Value &package) {
   }
 }
 
+// Checks if the given file exists and is up-to-date
+bool validateFileVersion (std::filesystem::path filePath, const std::string &version) {
+
+  // Check if the given file exists
+  if (!std::filesystem::exists(filePath)) return false;
+
+  // Check if the respective version file exists
+  filePath += ".ver";
+  if (!std::filesystem::exists(filePath)) return false;
+
+  // Read the version file
+  std::ifstream versionFile(filePath);
+  std::string localVersion = "";
+
+  if (versionFile.is_open()) {
+    std::getline(versionFile, localVersion);
+    versionFile.close();
+  }
+
+  return localVersion == version;
+
+}
+
+// Write a version file for the given file
+bool updateFileVersion (std::filesystem::path filePath, const std::string &version) {
+
+  filePath += ".ver";
+  std::ofstream versionFile(filePath);
+
+  if (versionFile.is_open()) {
+    versionFile << version;
+    versionFile.close();
+    return true;
+  }
+  return false;
+
+}
+
 void PackageItemWorker::getPackageIcon (ToolsPackage::PackageData package, const QSize iconSize) {
 
   // Generate a hash from the icon URL to use as a file name
   size_t imageURLHash = std::hash<std::string>{}(package.icon);
   std::filesystem::path imagePath = TEMP_DIR / std::to_string(imageURLHash);
 
-  // Attempt the download 5 times before giving up
-  for (int attempts = 0; attempts < 5; attempts ++) {
-    if (ToolsCURL::downloadFile(package.icon, imagePath)) break;
+  // Check if we have a valid icon cache
+  if (!validateFileVersion(imagePath, package.version)) {
+    updateFileVersion(imagePath, package.version);
+    // Attempt the download 5 times before giving up
+    for (int attempts = 0; attempts < 5; attempts ++) {
+      if (ToolsCURL::downloadFile(package.icon, imagePath)) break;
+    }
   }
 
   // Create a pixmap for the icon
@@ -70,42 +112,17 @@ void PackageItemWorker::installPackage (ToolsPackage::PackageData package) {
   size_t fileURLHash = std::hash<std::string>{}(package.file);
   const std::filesystem::path filePath = TEMP_DIR / std::to_string(fileURLHash);
 
-  // Check if we have an up-to-date cache of the package file
-  bool cacheFound = false;
-  if (std::filesystem::exists(filePath)) {
-
-    std::ifstream versionFile(filePath.string() + ".ver");
-    std::string localVersion = "";
-
-    if (versionFile.is_open()) {
-      std::getline(versionFile, localVersion);
-      versionFile.close();
+  // Download the package file if we don't have a valid cache
+  if (validateFileVersion(filePath, package.version)) {
+    std::cout << "Cached package found, skipping download" << std::endl;
+  } else {
+    if (!updateFileVersion(filePath, package.version)) {
+      std::cout << "Couldn't open package version file for writing" << std::endl;
     }
-
-    if (localVersion == package.version) {
-      cacheFound = true;
-      std::cout << "Cached package found, skipping download" << std::endl;
-    }
-
-  }
-
-  // If the cache was outdated (or not present), download the package file
-  if (!cacheFound) {
-
     if (!ToolsCURL::downloadFile(package.file, filePath)) {
       ToolsQT::displayErrorPopup("Installation aborted", "Failed to download package file.");
       return;
     }
-
-    // Update the version file
-    std::ofstream versionFile(filePath.string() + ".ver");
-    if (versionFile.is_open()) {
-      versionFile << package.version;
-      versionFile.close();
-    } else {
-      std::cout << "Couldn't open package version file for writing" << std::endl;
-    }
-
   }
 
     // Attempt installation
