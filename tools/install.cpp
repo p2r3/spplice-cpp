@@ -92,12 +92,14 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
 #ifndef TARGET_WINDOWS
 std::string ToolsInstall::getProcessPath (const std::string &processName) {
 
-  std::string executablePath = "";
-
   DIR *dir = opendir("/proc");
-  if (!dir) return executablePath;
+  if (!dir) return "";
 
-  // Look through /proc to find the PID of the given process
+  // Since we're looking for a path, it's safe to assume that the binary is prefixed with a slash
+  std::string queryString = "/" + processName;
+  std::size_t queryLength = queryString.length();
+
+  // Look through /proc to find the command line which launched the given process
   struct dirent *entry;
   while ((entry = readdir(dir)) != NULL) {
 
@@ -112,28 +114,22 @@ std::string ToolsInstall::getProcessPath (const std::string &processName) {
     std::string cmdline;
     std::getline(cmdlineFile, cmdline);
 
-    // If the process is not mentioned in this command line, continue searching
-    std::size_t index = cmdline.find(processName);
-    if (index == std::string::npos) continue;
+    // Get the index of the end of the path in the current command line
+    std::size_t pathEnd = std::min(cmdline.find('\0'), cmdline.length());
+    // Check if the command line path is shorter than our query string
+    if (pathEnd < queryLength) continue;
 
-    // Make sure that what we've found is a binary, not a path or argument
-    // Since we're searching for a path, it's safe to assume the binary is prefixed with a slash
-    const char prefix = cmdline[index - 1];
-    const char suffix = cmdline[index + processName.length()];
-    if (prefix != '/' || (suffix != ' ' && suffix != '\0')) continue;
-
-    // Use the PID we obtained to get the executable path
-    char exePath[1024] = {0};
-    std::string exeLink = "/proc/" + std::string(entry->d_name) + "/exe";
-
-    ssize_t len = readlink(exeLink.c_str(), exePath, sizeof(exePath) - 1);
-    if (len == -1) continue;
-    executablePath = exePath;
+    // Check if the command line path ends with the string we're looking for
+    if (cmdline.substr(pathEnd - queryLength, queryLength) == queryString) {
+      closedir(dir);
+      return cmdline.substr(0, pathEnd);
+    }
 
   }
-  closedir(dir);
 
-  return executablePath;
+  // If we haven't returned by now, we found nothing
+  closedir(dir);
+  return "";
 
 }
 #else
