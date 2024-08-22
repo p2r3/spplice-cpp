@@ -98,6 +98,8 @@ QLabel {
       <font>
        <family>Quicksand Medium</family>
        <pointsize>12</pointsize>
+       <weight>50</weight>
+       <bold>false</bold>
       </font>
      </property>
      <property name="text">
@@ -141,7 +143,7 @@ QLabel {
     <widget class="QLabel" name="PackageDescription">
      <property name="font">
       <font>
-       <family>Quicksand Light [NONE]</family>
+       <family>Quicksand</family>
        <pointsize>12</pointsize>
       </font>
      </property>

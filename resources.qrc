@@ -1,5 +1,5 @@
 <RCC>
-  <qresource prefix="/fonts/">
+  <qresource prefix="/">
     <file>fonts/Quicksand-Light.ttf</file>
     <file>fonts/Quicksand-Regular.ttf</file>
     <file>fonts/Quicksand-Medium.ttf</file>

@@ -152,7 +152,7 @@ QLabel, QPushButton {
           </property>
           <property name="font">
            <font>
-            <family>Quicksand Medium</family>
+            <family>Quicksand</family>
             <pointsize>16</pointsize>
             <weight>75</weight>
             <bold>true</bold>
@@ -179,7 +179,7 @@ QLabel, QPushButton {
           </property>
           <property name="font">
            <font>
-            <family>Quicksand Light [PfEd]</family>
+            <family>Quicksand Light</family>
             <pointsize>13</pointsize>
            </font>
           </property>
@@ -221,8 +221,10 @@ Second line of text.&lt;/p&gt;</string>
           </property>
           <property name="font">
            <font>
-            <family>Quicksand Medium</family>
+            <family>Quicksand</family>
             <pointsize>14</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
            </font>
           </property>
           <property name="cursor">
@@ -240,7 +242,9 @@ Second line of text.&lt;/p&gt;</string>
          <widget class="QPushButton" name="PackageInfoButton">
           <property name="font">
            <font>
-            <family>Quicksand Medium</family>
+            <family>Quicksand</family>
+            <weight>75</weight>
+            <bold>true</bold>
            </font>
           </property>
           <property name="cursor">
