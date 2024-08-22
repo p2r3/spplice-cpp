@@ -113,6 +113,7 @@ std::string ToolsInstall::getProcessPath (const std::string &processName) {
 
     std::string cmdline;
     std::getline(cmdlineFile, cmdline);
+    cmdlineFile.close();
 
     // Get the index of the end of the path in the current command line
     std::size_t pathEnd = std::min(cmdline.find('\0'), cmdline.length());
@@ -205,6 +206,18 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
 
     // execv only returns on error
     std::cerr << "Failed to call Steam binary from fork." << std::endl;
+
+    // If the above failed, revert to using the Steam browser protocol
+    std::string command = "xdg-open steam://run/620//-tempcontent";
+    for (const std::string &arg : extraArgs) {
+      command += " " + arg;
+    }
+
+    if (system(command.c_str()) != 0) {
+      std::cerr << "Failed to open Steam URI." << std::endl;
+    }
+
+    // Exit from the child process
     _exit(1);
 
   }
