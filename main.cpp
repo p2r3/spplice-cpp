@@ -63,15 +63,15 @@ int main (int argc, char *argv[]) {
 #endif
 
   // Create a vector containing all packages from all repositories
-  std::vector<ToolsPackage::PackageData> allPackages;
+  std::vector<const ToolsPackage::PackageData*> allPackages;
   // Fetch packages from each repository
   for (auto url : repositoryURLs) {
-    std::vector<ToolsPackage::PackageData> repository = ToolsRepo::fetchRepository(url);
+    std::vector<const ToolsPackage::PackageData*> repository = ToolsRepo::fetchRepository(url);
     allPackages.insert(allPackages.end(), repository.begin(), repository.end());
   }
 
   // Generate a PackageItem for each package
-  for (auto package : allPackages) {
+  for (const auto &package : allPackages) {
 
     // Create the package item widget
     QWidget *item = new QWidget;
@@ -79,14 +79,14 @@ int main (int argc, char *argv[]) {
     itemUI.setupUi(item);
 
     // Set the title and description
-    itemUI.PackageTitle->setText(QString::fromStdString(package.title));
+    itemUI.PackageTitle->setText(QString::fromStdString(package->title));
     itemUI.PackageDescription->setText(QString::fromStdString(
-      "<p style='line-height: 0.8em; max-height: 1.6em;'>" + package.description + "</p>"
+      "<p style='line-height: 0.8em; max-height: 1.6em;'>" + package->description + "</p>"
     ));
 
     // Connect the install button
     QPushButton *installButton = itemUI.PackageInstallButton;
-    QObject::connect(installButton, &QPushButton::clicked, [installButton, package]() {
+    QObject::connect(installButton, &QPushButton::clicked, [installButton, &package]() {
 
       // Create a thread for asynchronous installation
       PackageItemWorker *worker = new PackageItemWorker;
@@ -94,8 +94,8 @@ int main (int argc, char *argv[]) {
       worker->moveToThread(workerThread);
 
       // Connect the task of installing the package to the worker
-      QObject::connect(workerThread, &QThread::started, worker, [worker, package]() {
-        QMetaObject::invokeMethod(worker, "installPackage", Q_ARG(ToolsPackage::PackageData, package));
+      QObject::connect(workerThread, &QThread::started, worker, [worker, &package]() {
+        QMetaObject::invokeMethod(worker, "installPackage", Q_ARG(const ToolsPackage::PackageData*, package));
       });
 
       // Update the button text based on the installation state
@@ -136,8 +136,8 @@ int main (int argc, char *argv[]) {
 
     // Connect the task of fetching the icon to the worker
     QSize iconSize = itemUI.PackageIcon->size();
-    QObject::connect(workerThread, &QThread::started, worker, [worker, package, iconSize]() {
-      QMetaObject::invokeMethod(worker, "getPackageIcon", Q_ARG(ToolsPackage::PackageData, package), Q_ARG(QSize, iconSize));
+    QObject::connect(workerThread, &QThread::started, worker, [worker, &package, iconSize]() {
+      QMetaObject::invokeMethod(worker, "getPackageIcon", Q_ARG(const ToolsPackage::PackageData*, package), Q_ARG(QSize, iconSize));
     });
     QObject::connect(worker, &PackageItemWorker::packageIconResult, itemUI.PackageIcon, &QLabel::setPixmap);
 
@@ -150,19 +150,19 @@ int main (int argc, char *argv[]) {
     workerThread->start();
 
     // Connect the "Read more" button
-    QObject::connect(itemUI.PackageInfoButton, &QPushButton::clicked, [package]() {
+    QObject::connect(itemUI.PackageInfoButton, &QPushButton::clicked, [&package]() {
 
       QDialog *dialog = new QDialog;
       Ui::PackageInfo dialogUI;
       dialogUI.setupUi(dialog);
 
       // Set text data (title, author, description)
-      dialogUI.PackageTitle->setText(QString::fromStdString(package.title));
-      dialogUI.PackageAuthor->setText(QString::fromStdString("By " + package.author));
-      dialogUI.PackageDescription->setText(QString::fromStdString(package.description));
+      dialogUI.PackageTitle->setText(QString::fromStdString(package->title));
+      dialogUI.PackageAuthor->setText(QString::fromStdString("By " + package->author));
+      dialogUI.PackageDescription->setText(QString::fromStdString(package->description));
 
       // Set the icon - assume the image has already been downloaded
-      size_t imageURLHash = std::hash<std::string>{}(package.icon);
+      size_t imageURLHash = std::hash<std::string>{}(package->icon);
       std::filesystem::path imagePath = TEMP_DIR / std::to_string(imageURLHash);
 
       QSize iconSize = dialogUI.PackageIcon->size();
@@ -176,7 +176,7 @@ int main (int argc, char *argv[]) {
       QPixmap iconRoundedPixmap = ToolsQT::getRoundedPixmap(iconPixmap, 10);
       dialogUI.PackageIcon->setPixmap(iconRoundedPixmap);
 
-      dialog->setWindowTitle(QString::fromStdString("Details for " + package.title));
+      dialog->setWindowTitle(QString::fromStdString("Details for " + package->title));
       dialog->exec();
 
     });

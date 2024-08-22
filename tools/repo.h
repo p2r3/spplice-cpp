@@ -6,7 +6,7 @@
 
 class ToolsRepo {
   public:
-    static std::vector<ToolsPackage::PackageData> fetchRepository (const std::string &url);
+    static std::vector<const ToolsPackage::PackageData*> fetchRepository (const std::string &url);
 };
 
 #endif

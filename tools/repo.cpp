@@ -10,7 +10,7 @@
 #include "repo.h"
 
 // Fetches and parses repository JSON from the given URL
-std::vector<ToolsPackage::PackageData> ToolsRepo::fetchRepository (const std::string &url) {
+std::vector<const ToolsPackage::PackageData*> ToolsRepo::fetchRepository (const std::string &url) {
 
   std::string jsonString = ToolsCURL::downloadString(url);
 
@@ -23,9 +23,9 @@ std::vector<ToolsPackage::PackageData> ToolsRepo::fetchRepository (const std::st
   const int packageCount = packages.Size();
 
   // Create a vector, since a dynamic array is a bit more of a pain in the ass
-  std::vector<ToolsPackage::PackageData> repository;
+  std::vector<const ToolsPackage::PackageData*> repository;
   for (int i = 0; i < packageCount; i ++) {
-    repository.push_back(ToolsPackage::PackageData(packages[i]));
+    repository.push_back(new ToolsPackage::PackageData(packages[i]));
   }
 
   return repository;

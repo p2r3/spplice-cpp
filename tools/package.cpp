@@ -68,18 +68,18 @@ bool updateFileVersion (std::filesystem::path filePath, const std::string &versi
 
 }
 
-void PackageItemWorker::getPackageIcon (ToolsPackage::PackageData package, const QSize iconSize) {
+void PackageItemWorker::getPackageIcon (const ToolsPackage::PackageData *package, const QSize iconSize) {
 
   // Generate a hash from the icon URL to use as a file name
-  size_t imageURLHash = std::hash<std::string>{}(package.icon);
+  size_t imageURLHash = std::hash<std::string>{}(package->icon);
   std::filesystem::path imagePath = TEMP_DIR / std::to_string(imageURLHash);
 
   // Check if we have a valid icon cache
-  if (!validateFileVersion(imagePath, package.version)) {
-    updateFileVersion(imagePath, package.version);
+  if (!validateFileVersion(imagePath, package->version)) {
+    updateFileVersion(imagePath, package->version);
     // Attempt the download 5 times before giving up
     for (int attempts = 0; attempts < 5; attempts ++) {
-      if (ToolsCURL::downloadFile(package.icon, imagePath)) break;
+      if (ToolsCURL::downloadFile(package->icon, imagePath)) break;
     }
   }
 
@@ -97,7 +97,7 @@ void PackageItemWorker::getPackageIcon (ToolsPackage::PackageData package, const
 
 };
 
-void PackageItemWorker::installPackage (ToolsPackage::PackageData package) {
+void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package) {
 
   // If a package is already installing (or installed), exit early
   if (SPPLICE_INSTALL_STATE != 0) {
@@ -109,17 +109,17 @@ void PackageItemWorker::installPackage (ToolsPackage::PackageData package) {
   emit installStateUpdate();
 
   // Generate a hash from the file's URL to use as a file name
-  size_t fileURLHash = std::hash<std::string>{}(package.file);
+  size_t fileURLHash = std::hash<std::string>{}(package->file);
   const std::filesystem::path filePath = TEMP_DIR / std::to_string(fileURLHash);
 
   // Download the package file if we don't have a valid cache
-  if (validateFileVersion(filePath, package.version)) {
+  if (validateFileVersion(filePath, package->version)) {
     std::cout << "Cached package found, skipping download" << std::endl;
   } else {
-    if (!updateFileVersion(filePath, package.version)) {
+    if (!updateFileVersion(filePath, package->version)) {
       std::cout << "Couldn't open package version file for writing" << std::endl;
     }
-    if (!ToolsCURL::downloadFile(package.file, filePath)) {
+    if (!ToolsCURL::downloadFile(package->file, filePath)) {
       ToolsQT::displayErrorPopup("Installation aborted", "Failed to download package file.");
       return;
     }
@@ -127,9 +127,9 @@ void PackageItemWorker::installPackage (ToolsPackage::PackageData package) {
 
     // Attempt installation
 #ifndef TARGET_WINDOWS
-  std::pair<bool, std::string> installationResult = ToolsInstall::installPackageFile(filePath, package.args);
+  std::pair<bool, std::string> installationResult = ToolsInstall::installPackageFile(filePath, package->args);
 #else
-  std::pair<bool, std::wstring> installationResult = ToolsInstall::installPackageFile(filePath, package.args);
+  std::pair<bool, std::wstring> installationResult = ToolsInstall::installPackageFile(filePath, package->args);
 #endif
 
   // If installation failed, display error and exit early
