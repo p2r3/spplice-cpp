@@ -61,6 +61,8 @@ add_executable(SppliceCPP
   tools/install.cpp
   tools/package.cpp
   tools/repo.cpp
+  tools/js.cpp
+  tools/netcon.cpp
   ${RESOURCES}
 )
 
@@ -73,6 +75,7 @@ if (SPPLICE_TARGET_WINDOWS) # If building for Windows:
   target_link_libraries(SppliceCPP
     "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/archive.dll"
     "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/liblzma.dll"
+    "${CMAKE_CURRENT_SOURCE_DIR}/quickjs/libquickjs.lto.a"
     "libwininet.a"
   )
 
@@ -91,6 +94,7 @@ else() # If building for Linux:
     ${libacl_STATIC}
     ${libarchive_STATIC}
     ${liblzma_STATIC}
+    "${CMAKE_CURRENT_SOURCE_DIR}/quickjs/libquickjs.lto.a"
   )
 
 endif()

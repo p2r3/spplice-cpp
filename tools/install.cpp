@@ -13,6 +13,7 @@
 #include "../globals.h" // Project globals
 #include "curl.h" // ToolsCURL
 #include "qt.h" // ToolsQT
+#include "js.h" // ToolsJS
 
 #ifdef TARGET_WINDOWS
   #include <windows.h>
@@ -547,6 +548,15 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
 
   // Link the soundcache from base Portal 2 to skip waiting for it to generate
   linkFile(gamePath / "portal2" / "maps" / "soundcache" / "_master.cache", tempcontentPath / "maps" / "soundcache" / "_master.cache");
+
+  // Run the JavaScript entrypoint (if one exists) on a detached thread
+  const std::filesystem::path jsEntryPoint = tmpPackageDirectory / "main.js";
+  if (std::filesystem::exists(jsEntryPoint)) {
+    std::thread jsThread([jsEntryPoint]() {
+      ToolsJS::runFile(jsEntryPoint);
+    });
+    jsThread.detach();
+  }
 
   // Report install success to the UI
 #ifndef TARGET_WINDOWS
