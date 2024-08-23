@@ -236,7 +236,7 @@ void ToolsJS::runFile (const std::filesystem::path &filePath) {
 
   // Evaluate the code in the file buffer
   const std::string code = fileBuffer.str();
-  JSValue result = JS_Eval(ctx, code.c_str(), code.length(), filePath.filename().c_str(), JS_EVAL_TYPE_GLOBAL);
+  JSValue result = JS_Eval(ctx, code.c_str(), code.length(), filePath.filename().string().c_str(), JS_EVAL_TYPE_GLOBAL);
 
   // Handle exceptions
   if (JS_IsException(result)) {

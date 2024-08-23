@@ -1,12 +1,31 @@
 #include <iostream>
 #include <cstring>
-#include <unistd.h>
-#include <arpa/inet.h>
 
 #include "../globals.h" // Project globals
 
+#ifndef TARGET_WINDOWS
+  #include <unistd.h>
+  #include <arpa/inet.h>
+#else
+  #include <winsock2.h>
+  #include <ws2tcpip.h>
+#endif
+
 // Definitions for this source file
 #include "netcon.h"
+
+// Closes the given socket
+void ToolsNetCon::disconnect (int sockfd)
+#ifndef TARGET_WINDOWS
+{
+  close(sockfd);
+}
+#else
+{
+  closesocket(sockfd);
+  WSACleanup();
+}
+#endif
 
 // Attempts to connect to the game's telnet console on SPPLICE_NETCON_PORT
 int ToolsNetCon::attemptConnection () {
@@ -26,17 +45,12 @@ int ToolsNetCon::attemptConnection () {
 
   // Attempt connection to the server
   if (connect(sockfd, (sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-    close(sockfd);
+    ToolsNetCon::disconnect(sockfd);
     return -1;
   }
 
   return sockfd;
 
-}
-
-// Closes the given socket
-void ToolsNetCon::disconnect (int sockfd) {
-  close(sockfd);
 }
 
 // Sends a command to the telnet server on the given socket

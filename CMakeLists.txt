@@ -77,6 +77,7 @@ if (SPPLICE_TARGET_WINDOWS) # If building for Windows:
     "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/liblzma.dll"
     "${CMAKE_CURRENT_SOURCE_DIR}/quickjs/libquickjs.lto.a"
     "libwininet.a"
+    "libws2_32.a"
   )
 
 else() # If building for Linux:
