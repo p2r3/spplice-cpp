@@ -196,6 +196,8 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
     args.push_back("-applaunch");
     args.push_back("620");
     args.push_back("-tempcontent");
+    args.push_back("-netconport");
+    args.push_back(std::to_string(SPPLICE_NETCON_PORT).c_str());
 
     // Append any additional package-specific arguments
     for (const std::string &arg : extraArgs) {
@@ -209,7 +211,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
     std::cerr << "Failed to call Steam binary from fork." << std::endl;
 
     // If the above failed, revert to using the Steam browser protocol
-    std::string command = "xdg-open steam://run/620//-tempcontent";
+    std::string command = "xdg-open steam://run/620//-tempcontent -netconport " + SPPLICE_NETCON_PORT;
     for (const std::string &arg : extraArgs) {
       command += " " + arg;
     }
@@ -244,7 +246,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
   si.dwFlags = STARTF_USESHOWWINDOW;
   si.wShowWindow = SW_HIDE;  // Hide the window for the detached process
 
-  std::wstring args = L"-applaunch 620 -tempcontent";
+  std::wstring args = L"-applaunch 620 -tempcontent -netconport " + SPPLICE_NETCON_PORT;
 
   // Append any additional package-specific arguments
   for (const std::string &arg : extraArgs) {
