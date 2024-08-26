@@ -2,7 +2,7 @@
 build
 ui/*.h
 qt5
-qt5-static
+qt5build
 fonts
 win
 quickjs

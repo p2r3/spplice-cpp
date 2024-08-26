@@ -7,7 +7,7 @@ set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
 set(CMAKE_RC_COMPILER x86_64-w64-mingw32-windres)
 
 # Set the Qt directory
-set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_LIST_DIR}/qt5-static")
+set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_LIST_DIR}/qt5build/win32")
 
 # Specify where to find dependencies
 include_directories("${CMAKE_CURRENT_LIST_DIR}/win/include")

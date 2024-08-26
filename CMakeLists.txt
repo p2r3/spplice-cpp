@@ -42,9 +42,12 @@ function(find_library_override out_var)
 
 endfunction()
 
-# Set the exact Qt path (what "get_qt5.sh" builds) and make doubly sure we're linking it statically.
-set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5-static/lib/cmake/Qt5Widgets")
-set(QT_STATIC ON)
+# Set the exact Qt path (what "qt5setup.sh" builds) for the respective platform
+if (SPPLICE_TARGET_WINDOWS)
+  set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/win32/lib/cmake/Qt5Widgets")
+else()
+  set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/linux/lib/cmake/Qt5Widgets")
+endif()
 
 # Find Qt5Widgets.
 find_package(Qt5 REQUIRED COMPONENTS Widgets)
@@ -75,7 +78,7 @@ if (SPPLICE_TARGET_WINDOWS) # If building for Windows:
   target_link_libraries(SppliceCPP
     "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/archive.dll"
     "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/liblzma.dll"
-    "${CMAKE_CURRENT_SOURCE_DIR}/quickjs/libquickjs.lto.a"
+    "${CMAKE_CURRENT_SOURCE_DIR}/quickjs/lib/libquickjs.lto.win32.a"
     "libwininet.a"
     "libws2_32.a"
   )
@@ -95,7 +98,7 @@ else() # If building for Linux:
     ${libacl_STATIC}
     ${libarchive_STATIC}
     ${liblzma_STATIC}
-    "${CMAKE_CURRENT_SOURCE_DIR}/quickjs/libquickjs.lto.a"
+    "${CMAKE_CURRENT_SOURCE_DIR}/quickjs/lib/libquickjs.lto.linux.a"
   )
 
 endif()
