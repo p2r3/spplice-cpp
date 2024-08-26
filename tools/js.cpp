@@ -94,7 +94,8 @@ struct customJS {
       fileBuffer << fileStream.rdbuf();
       fileStream.close();
 
-      return JS_NewString(ctx, fileBuffer.str().c_str());
+      std::string fileString = fileBuffer.str();
+      return JS_NewStringLen(ctx, fileString.c_str(), fileString.length());
 
     }
     static JSValue write (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
