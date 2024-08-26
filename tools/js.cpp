@@ -8,6 +8,7 @@
 
 #include "../globals.h" // Project globals
 #include "netcon.h" // ToolsNetCon
+#include "curl.h" // ToolsCURL
 
 // Definitions for this source file
 #include "js.h"
@@ -154,7 +155,7 @@ struct customJS {
 
       int sockfd;
       JS_ToInt32(ctx, &sockfd, argv[0]);
-      if (sockfd == -1) JS_ThrowTypeError(ctx, "game.send: Invalid socket provided");
+      if (sockfd == -1) return JS_ThrowTypeError(ctx, "game.send: Invalid socket provided");
 
       const char *command = JS_ToCString(ctx, argv[1]);
       if (!ToolsNetCon::sendCommand(sockfd, command)) {
@@ -167,13 +168,41 @@ struct customJS {
 
       int sockfd;
       JS_ToInt32(ctx, &sockfd, argv[0]);
-      if (sockfd == -1) JS_ThrowTypeError(ctx, "game.read: Invalid socket provided");
+      if (sockfd == -1) return JS_ThrowTypeError(ctx, "game.read: Invalid socket provided");
 
       int64_t size;
       JS_ToInt64(ctx, &size, argv[1]);
       if (!size) size = 1024;
 
       const std::string output = ToolsNetCon::readConsole(sockfd, size);
+      return JS_NewStringLen(ctx, output.c_str(), output.length());
+
+    }
+  };
+
+  struct download {
+    static JSValue file (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+
+      const char *path = JS_ToCString(ctx, argv[0]);
+      const char *url = JS_ToCString(ctx, argv[1]);
+      if (!path) return JS_ThrowTypeError(ctx, "download.file: Invalid path argument");
+      if (!url) return JS_ThrowTypeError(ctx, "download.file: Invalid URL argument");
+
+      const std::filesystem::path fullPath = TEMP_DIR / "tempcontent" / path;
+      if (std::filesystem::exists(path)) return JS_ThrowInternalError(ctx, "download.file: Path already occupied");
+
+      if (!ToolsCURL::downloadFile(url, fullPath)) {
+        return JS_ThrowInternalError(ctx, "download.file: Download failed");
+      }
+      return JS_UNDEFINED;
+
+    }
+    static JSValue string (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+
+      const char *url = JS_ToCString(ctx, argv[0]);
+      if (!url) return JS_ThrowTypeError(ctx, "download.string: Invalid URL argument");
+
+      std::string output = ToolsCURL::downloadString(url);
       return JS_NewStringLen(ctx, output.c_str(), output.length());
 
     }
@@ -231,6 +260,11 @@ void ToolsJS::runFile (const std::filesystem::path &filePath) {
   JS_SetPropertyStr(ctx, game, "send", JS_NewCFunction(ctx, customJS::game::send, "send", 4));
   JS_SetPropertyStr(ctx, game, "read", JS_NewCFunction(ctx, customJS::game::read, "read", 4));
   JS_SetPropertyStr(ctx, global, "game", game);
+
+  JSValue download = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, download, "file", JS_NewCFunction(ctx, customJS::download::file, "file", 4));
+  JS_SetPropertyStr(ctx, download, "string", JS_NewCFunction(ctx, customJS::download::string, "string", 6));
+  JS_SetPropertyStr(ctx, global, "download", download);
 
   JS_SetPropertyStr(ctx, global, "sleep", JS_NewCFunction(ctx, customJS::sleep, "sleep", 5));
 
