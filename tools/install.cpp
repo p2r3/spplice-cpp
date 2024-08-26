@@ -211,7 +211,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
     std::cerr << "Failed to call Steam binary from fork." << std::endl;
 
     // If the above failed, revert to using the Steam browser protocol
-    std::string command = "xdg-open steam://run/620//-tempcontent -netconport " + SPPLICE_NETCON_PORT;
+    std::string command = "xdg-open steam://run/620//-tempcontent -netconport " + std::to_string(SPPLICE_NETCON_PORT);
     for (const std::string &arg : extraArgs) {
       command += " " + arg;
     }
@@ -246,7 +246,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
   si.dwFlags = STARTF_USESHOWWINDOW;
   si.wShowWindow = SW_HIDE;  // Hide the window for the detached process
 
-  std::wstring args = L"-applaunch 620 -tempcontent -netconport " + SPPLICE_NETCON_PORT;
+  std::wstring args = L"-applaunch 620 -tempcontent -netconport " + std::to_wstring(SPPLICE_NETCON_PORT);
 
   // Append any additional package-specific arguments
   for (const std::string &arg : extraArgs) {
@@ -532,9 +532,10 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
       std::filesystem::create_directories(tempcontentBackupPath);
       // Check for the next available backup slot
       for (int i = 1; i <= 64; i ++) {
-        std::filesystem::path newPath = tempcontentBackupPath / ("portal2_tempcontent_" + i);
+        std::filesystem::path newPath = tempcontentBackupPath / ("portal2_tempcontent_" + std::to_string(i));
         if (std::filesystem::exists(newPath)) continue;
         std::filesystem::rename(tempcontentPath, newPath);
+        break;
       }
     }
   }
