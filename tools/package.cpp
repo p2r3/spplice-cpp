@@ -6,7 +6,9 @@
 #include <string>
 #include <functional>
 #include <QPixmap>
-#include "rapidjson/document.h"
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonValue>
 
 #include "../globals.h"
 #include "curl.h" // ToolsCURL
@@ -17,16 +19,16 @@
 #include "package.h"
 
 // Constructs the PackageData instance from a JSON object
-ToolsPackage::PackageData::PackageData (rapidjson::Value &package) {
-  this->title = package["title"].GetString();
-  this->author = package["author"].GetString();
-  this->description = package["description"].GetString();
-  this->version = package["version"].GetString();
-  this->file = package["file"].GetString();
-  this->icon = package["icon"].GetString();
-  rapidjson::Value &args = package["args"];
-  for (rapidjson::Value::ConstValueIterator itr = args.Begin(); itr != args.End(); ++itr) {
-    this->args.push_back(itr->GetString());
+ToolsPackage::PackageData::PackageData (QJsonObject package) {
+  this->title = package["title"].toString().toStdString();
+  this->author = package["author"].toString().toStdString();
+  this->description = package["description"].toString().toStdString();
+  this->version = package["version"].toString().toStdString();
+  this->file = package["file"].toString().toStdString();
+  this->icon = package["icon"].toString().toStdString();
+  QJsonArray args = package["args"].toArray();
+  for (const QJsonValue &arg : args) {
+    this->args.push_back(arg.toString().toStdString());
   }
 }
 

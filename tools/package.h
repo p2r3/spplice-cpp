@@ -1,10 +1,10 @@
 #ifndef TOOLS_PACKAGE_H
 #define TOOLS_PACKAGE_H
 
-#include "rapidjson/document.h"
 #include <filesystem>
 #include <QObject>
 #include <QPixmap>
+#include <QJsonObject>
 
 // The structure of a package's properties
 class ToolsPackage {
@@ -20,7 +20,7 @@ class ToolsPackage {
       std::string file;
       std::string icon;
 
-      PackageData (rapidjson::Value &package);
+      PackageData (QJsonObject package);
 
     };
 
