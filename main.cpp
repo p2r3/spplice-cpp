@@ -32,6 +32,8 @@
 #include "tools/package.h"
 #include "tools/repo.h"
 
+#include "duktape/duktape.h"
+
 const char *repositoryURLs[] = {
   "https://p2r3.github.io/spplice-repo/index.json"
 };

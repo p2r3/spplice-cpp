@@ -5,4 +5,4 @@ qt5
 qt5build
 fonts
 win
-quickjs
+duktape

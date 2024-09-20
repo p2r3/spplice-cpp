@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <thread>
 #include <chrono>
-#include "../quickjs/quickjs.h"
+#include "../duktape/duktape.h"
 
 #include "../globals.h" // Project globals
 #include "netcon.h" // ToolsNetCon
@@ -18,76 +18,74 @@ struct customJS {
 
   // Imitates the "console" object for printing to stdout
   struct console {
-    static JSValue log (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t log (duk_context *ctx) {
+
+      int argc = duk_get_top(ctx);
 
       std::cout << "[JS] ";
       for (int i = 0; i < argc; i ++) {
-        const char *str = JS_ToCString(ctx, argv[i]);
-        if (!str) continue;
-
-        std::cout << str << " ";
-        JS_FreeCString(ctx, str);
+        const char *str = duk_to_string(ctx, i);
+        if (str) std::cout << str << " ";
       }
       std::cout << std::endl;
 
-      return JS_UNDEFINED;
+      return 0;
 
     }
-    static JSValue error (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t error (duk_context *ctx) {
+
+      int argc = duk_get_top(ctx);
 
       std::cerr << "[JS] ";
       for (int i = 0; i < argc; i ++) {
-        const char *str = JS_ToCString(ctx, argv[i]);
-        if (!str) continue;
-
-        std::cerr << str << " ";
-        JS_FreeCString(ctx, str);
+        const char *str = duk_to_string(ctx, i);
+        if (str) std::cerr << str << " ";
       }
       std::cerr << std::endl;
 
-      return JS_UNDEFINED;
+      return 0;
 
     }
   };
 
   // Implements simple high-level file system operations
   struct fs {
-    static JSValue mkdir (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t mkdir (duk_context *ctx) {
 
-      const char *path = JS_ToCString(ctx, argv[0]);
-      if (!path) return JS_ThrowTypeError(ctx, "fs.mkdir: Invalid path argument");
+      const char *path = duk_to_string(ctx, 0);
+      if (!path) return duk_type_error(ctx, "fs.mkdir: Invalid path argument");
 
       const std::filesystem::path fullPath = TEMP_DIR / "tempcontent" / path;
-      if (std::filesystem::exists(fullPath)) return JS_ThrowInternalError(ctx, "fs.mkdir: Path already exists");
+      if (std::filesystem::exists(fullPath)) return duk_generic_error(ctx, "fs.mkdir: Path already exists");
 
       std::filesystem::create_directories(fullPath);
-      return JS_UNDEFINED;
+      return 0;
 
     }
-    static JSValue unlink (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t unlink (duk_context *ctx) {
 
-      const char *path = JS_ToCString(ctx, argv[0]);
-      if (!path) return JS_ThrowTypeError(ctx, "fs.unlink: Invalid path argument");
+      const char *path = duk_to_string(ctx, 0);
+      if (!path) return duk_type_error(ctx, "fs.unlink: Invalid path argument");
 
       const std::filesystem::path fullPath = TEMP_DIR / "tempcontent" / path;
-      if (!std::filesystem::exists(fullPath)) return JS_ThrowInternalError(ctx, "fs.unlink: Path does not exist");
+      if (!std::filesystem::exists(fullPath)) return duk_generic_error(ctx, "fs.unlink: Path does not exist");
 
       if (std::filesystem::is_directory(fullPath)) {
         std::filesystem::remove_all(fullPath);
       } else {
         std::filesystem::remove(fullPath);
       }
-      return JS_UNDEFINED;
+      return 0;
 
     }
-    static JSValue read (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t read (duk_context *ctx) {
 
-      const char *path = JS_ToCString(ctx, argv[0]);
-      if (!path) return JS_ThrowTypeError(ctx, "fs.read: Invalid path argument");
+      const char *path = duk_to_string(ctx, 0);
+      if (!path) return duk_type_error(ctx, "fs.read: Invalid path argument");
 
       const std::filesystem::path fullPath = TEMP_DIR / "tempcontent" / path;
-      if (!std::filesystem::exists(fullPath)) return JS_ThrowInternalError(ctx, "fs.read: File does not exist");
-      if (!std::filesystem::is_regular_file(fullPath)) return JS_ThrowInternalError(ctx, "fs.read: Path is not a file");
+      if (!std::filesystem::exists(fullPath)) return duk_generic_error(ctx, "fs.read: File does not exist");
+      if (!std::filesystem::is_regular_file(fullPath)) return duk_generic_error(ctx, "fs.read: Path is not a file");
 
       std::ifstream fileStream(fullPath);
       std::stringstream fileBuffer;
@@ -95,128 +93,127 @@ struct customJS {
       fileStream.close();
 
       std::string fileString = fileBuffer.str();
-      return JS_NewStringLen(ctx, fileString.c_str(), fileString.length());
+      duk_push_lstring(ctx, fileString.c_str(), fileString.length());
+      return 1;
 
     }
-    static JSValue write (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t write (duk_context *ctx) {
 
-      const char *path = JS_ToCString(ctx, argv[0]);
-      const char *contents = JS_ToCString(ctx, argv[1]);
-      if (!path) return JS_ThrowTypeError(ctx, "fs.write: Invalid path argument");
-      if (!contents) return JS_ThrowTypeError(ctx, "fs.write: Invalid contents argument");
+      const char *path = duk_to_string(ctx, 0);
+      const char *contents = duk_to_string(ctx, 1);
+      if (!path) return duk_type_error(ctx, "fs.write: Invalid path argument");
+      if (!contents) return duk_type_error(ctx, "fs.write: Invalid contents argument");
 
       const std::filesystem::path fullPath = TEMP_DIR / "tempcontent" / path;
       if (std::filesystem::exists(fullPath) && !std::filesystem::is_regular_file(fullPath)) {
-        return JS_ThrowInternalError(ctx, "fs.write: Path already exists and is not a file");
+        return duk_generic_error(ctx, "fs.write: Path already exists and is not a file");
       }
 
       std::ofstream fileStream(fullPath);
       fileStream << contents;
       fileStream.close();
 
-      return JS_UNDEFINED;
+      return 0;
 
     }
-    static JSValue rename (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t rename (duk_context *ctx) {
 
-      const char *oldPath = JS_ToCString(ctx, argv[0]);
-      const char *newPath = JS_ToCString(ctx, argv[1]);
-      if (!oldPath) return JS_ThrowTypeError(ctx, "fs.rename: Invalid oldPath argument");
-      if (!newPath) return JS_ThrowTypeError(ctx, "fs.rename: Invalid newPath argument");
+      const char *oldPath = duk_to_string(ctx, 0);
+      const char *newPath = duk_to_string(ctx, 1);
+      if (!oldPath) return duk_type_error(ctx, "fs.rename: Invalid oldPath argument");
+      if (!newPath) return duk_type_error(ctx, "fs.rename: Invalid newPath argument");
 
       const std::filesystem::path fullPathOld = TEMP_DIR / "tempcontent" / oldPath;
       const std::filesystem::path fullPathNew = TEMP_DIR / "tempcontent" / newPath;
 
-      if (!std::filesystem::exists(oldPath)) return JS_ThrowInternalError(ctx, "fs.rename: Path does not exist");
-      if (std::filesystem::exists(newPath)) return JS_ThrowInternalError(ctx, "fs.rename: New path already occupied");
+      if (!std::filesystem::exists(oldPath)) return duk_generic_error(ctx, "fs.rename: Path does not exist");
+      if (std::filesystem::exists(newPath)) return duk_generic_error(ctx, "fs.rename: New path already occupied");
 
       std::filesystem::rename(oldPath, newPath);
-      return JS_UNDEFINED;
+      return 0;
 
     }
   };
 
   // Implements an interface for connecting to the Portal 2 telnet console
   struct game {
-    static JSValue connect (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t connect (duk_context *ctx) {
 
       int sockfd = ToolsNetCon::attemptConnection();
-      return JS_NewInt32(ctx, sockfd);
+      duk_push_number(ctx, sockfd);
+      return 1;
 
     }
-    static JSValue disconnect (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t disconnect (duk_context *ctx) {
 
-      int sockfd;
-      JS_ToInt32(ctx, &sockfd, argv[0]);
+      int sockfd = duk_to_int(ctx, 0);
+      if (sockfd < 0) return duk_type_error(ctx, "game.disconnect: Invalid socket provided");
+
       ToolsNetCon::disconnect(sockfd);
-      return JS_UNDEFINED;
+      return 0;
 
     }
-    static JSValue send (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t send (duk_context *ctx) {
 
-      int sockfd;
-      JS_ToInt32(ctx, &sockfd, argv[0]);
-      if (sockfd == -1) return JS_ThrowTypeError(ctx, "game.send: Invalid socket provided");
+      int sockfd = duk_to_int(ctx, 0);
+      if (sockfd < 0) return duk_type_error(ctx, "game.send: Invalid socket provided");
 
-      const char *command = JS_ToCString(ctx, argv[1]);
+      const char *command = duk_to_string(ctx, 1);
       if (!ToolsNetCon::sendCommand(sockfd, command)) {
-        return JS_ThrowInternalError(ctx, "game.send: Failed to send command");
+        return duk_generic_error(ctx, "game.send: Failed to send command");
       }
-      return JS_UNDEFINED;
+      return 0;
 
     }
-    static JSValue read (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t read (duk_context *ctx) {
 
-      int sockfd;
-      JS_ToInt32(ctx, &sockfd, argv[0]);
-      if (sockfd == -1) return JS_ThrowTypeError(ctx, "game.read: Invalid socket provided");
+      int sockfd = duk_to_int(ctx, 0);
+      if (sockfd < 0) return duk_type_error(ctx, "game.read: Invalid socket provided");
 
-      int64_t size;
-      JS_ToInt64(ctx, &size, argv[1]);
+      size_t size = duk_to_uint(ctx, 1);
       if (!size) size = 1024;
 
       const std::string output = ToolsNetCon::readConsole(sockfd, size);
-      return JS_NewStringLen(ctx, output.c_str(), output.length());
+      duk_push_lstring(ctx, output.c_str(), output.length());
+      return 1;
 
     }
   };
 
   struct download {
-    static JSValue file (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t file (duk_context *ctx) {
 
-      const char *path = JS_ToCString(ctx, argv[0]);
-      const char *url = JS_ToCString(ctx, argv[1]);
-      if (!path) return JS_ThrowTypeError(ctx, "download.file: Invalid path argument");
-      if (!url) return JS_ThrowTypeError(ctx, "download.file: Invalid URL argument");
+      const char *path = duk_to_string(ctx, 0);
+      const char *url = duk_to_string(ctx, 1);
+      if (!path) return duk_type_error(ctx, "download.file: Invalid path argument");
+      if (!url) return duk_type_error(ctx, "download.file: Invalid URL argument");
 
       const std::filesystem::path fullPath = TEMP_DIR / "tempcontent" / path;
-      if (std::filesystem::exists(path)) return JS_ThrowInternalError(ctx, "download.file: Path already occupied");
+      if (std::filesystem::exists(path)) return duk_generic_error(ctx, "download.file: Path already occupied");
 
       if (!ToolsCURL::downloadFile(url, fullPath)) {
-        return JS_ThrowInternalError(ctx, "download.file: Download failed");
+        return duk_generic_error(ctx, "download.file: Download failed");
       }
-      return JS_UNDEFINED;
+      return 0;
 
     }
-    static JSValue string (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    static duk_ret_t string (duk_context *ctx) {
 
-      const char *url = JS_ToCString(ctx, argv[0]);
-      if (!url) return JS_ThrowTypeError(ctx, "download.string: Invalid URL argument");
+      const char *url = duk_to_string(ctx, 0);
+      if (!url) return duk_type_error(ctx, "download.string: Invalid URL argument");
 
       std::string output = ToolsCURL::downloadString(url);
-      return JS_NewStringLen(ctx, output.c_str(), output.length());
+      duk_push_lstring(ctx, output.c_str(), output.length());
+      return 1;
 
     }
   };
 
-  static JSValue sleep (JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+  static duk_ret_t sleep (duk_context *ctx) {
 
-    int64_t time;
-    JS_ToInt64(ctx, &time, argv[0]);
-    if (time < 0) return JS_ThrowTypeError(ctx, "sleep: Time cannot be negative");
-
+    size_t time = duk_to_uint(ctx, 0);
     std::this_thread::sleep_for(std::chrono::milliseconds(time));
-    return JS_UNDEFINED;
+    return 0;
 
   }
 
@@ -235,57 +232,61 @@ void ToolsJS::runFile (const std::filesystem::path &filePath) {
   std::stringstream fileBuffer;
   fileBuffer << fileStream.rdbuf();
   fileStream.close();
-
-  // Create a new QuickJS runtime
-  JSRuntime *rt = JS_NewRuntime();
-  JSContext *ctx = JS_NewContext(rt);
-  JSValue global = JS_GetGlobalObject(ctx);
-
+  // Create a new Duktape context
+  duk_context *ctx = duk_create_heap_default();
   // Register custom functions
-  JSValue console = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, console, "log", JS_NewCFunction(ctx, customJS::console::log, "log", 3));
-  JS_SetPropertyStr(ctx, console, "error", JS_NewCFunction(ctx, customJS::console::error, "error", 5));
-  JS_SetPropertyStr(ctx, global, "console", console);
+  duk_idx_t obj_idx;
 
-  JSValue fs = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, fs, "mkdir", JS_NewCFunction(ctx, customJS::fs::mkdir, "mkdir", 5));
-  JS_SetPropertyStr(ctx, fs, "unlink", JS_NewCFunction(ctx, customJS::fs::unlink, "unlink", 6));
-  JS_SetPropertyStr(ctx, fs, "read", JS_NewCFunction(ctx, customJS::fs::read, "read", 4));
-  JS_SetPropertyStr(ctx, fs, "write", JS_NewCFunction(ctx, customJS::fs::write, "write", 5));
-  JS_SetPropertyStr(ctx, fs, "rename", JS_NewCFunction(ctx, customJS::fs::rename, "rename", 6));
-  JS_SetPropertyStr(ctx, global, "fs", fs);
+  obj_idx = duk_push_object(ctx);
+  duk_push_c_function(ctx, customJS::console::log, DUK_VARARGS);
+  duk_put_prop_string(ctx, obj_idx, "log");
+  duk_push_c_function(ctx, customJS::console::error, DUK_VARARGS);
+  duk_put_prop_string(ctx, obj_idx, "error");
+  duk_put_global_string(ctx, "console");
 
-  JSValue game = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, game, "connect", JS_NewCFunction(ctx, customJS::game::connect, "connect", 7));
-  JS_SetPropertyStr(ctx, game, "disconnect", JS_NewCFunction(ctx, customJS::game::disconnect, "disconnect", 10));
-  JS_SetPropertyStr(ctx, game, "send", JS_NewCFunction(ctx, customJS::game::send, "send", 4));
-  JS_SetPropertyStr(ctx, game, "read", JS_NewCFunction(ctx, customJS::game::read, "read", 4));
-  JS_SetPropertyStr(ctx, global, "game", game);
+  obj_idx = duk_push_object(ctx);
+  duk_push_c_function(ctx, customJS::fs::mkdir, 1);
+  duk_put_prop_string(ctx, obj_idx, "mkdir");
+  duk_push_c_function(ctx, customJS::fs::unlink, 1);
+  duk_put_prop_string(ctx, obj_idx, "unlink");
+  duk_push_c_function(ctx, customJS::fs::read, 1);
+  duk_put_prop_string(ctx, obj_idx, "read");
+  duk_push_c_function(ctx, customJS::fs::write, 2);
+  duk_put_prop_string(ctx, obj_idx, "write");
+  duk_push_c_function(ctx, customJS::fs::rename, 2);
+  duk_put_prop_string(ctx, obj_idx, "rename");
+  duk_put_global_string(ctx, "fs");
 
-  JSValue download = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, download, "file", JS_NewCFunction(ctx, customJS::download::file, "file", 4));
-  JS_SetPropertyStr(ctx, download, "string", JS_NewCFunction(ctx, customJS::download::string, "string", 6));
-  JS_SetPropertyStr(ctx, global, "download", download);
+  obj_idx = duk_push_object(ctx);
+  duk_push_c_function(ctx, customJS::game::connect, 0);
+  duk_put_prop_string(ctx, obj_idx, "connect");
+  duk_push_c_function(ctx, customJS::game::disconnect, 1);
+  duk_put_prop_string(ctx, obj_idx, "disconnect");
+  duk_push_c_function(ctx, customJS::game::send, 2);
+  duk_put_prop_string(ctx, obj_idx, "send");
+  duk_push_c_function(ctx, customJS::game::read, 2);
+  duk_put_prop_string(ctx, obj_idx, "read");
+  duk_put_global_string(ctx, "game");
 
-  JS_SetPropertyStr(ctx, global, "sleep", JS_NewCFunction(ctx, customJS::sleep, "sleep", 5));
+  obj_idx = duk_push_object(ctx);
+  duk_push_c_function(ctx, customJS::download::file, 2);
+  duk_put_prop_string(ctx, obj_idx, "file");
+  duk_push_c_function(ctx, customJS::download::string, 1);
+  duk_put_prop_string(ctx, obj_idx, "string");
+  duk_put_global_string(ctx, "download");
+
+  duk_push_c_function(ctx, customJS::sleep, 1);
+  duk_put_global_string(ctx, "sleep");
 
   // Evaluate the code in the file buffer
   const std::string code = fileBuffer.str();
-  JSValue result = JS_Eval(ctx, code.c_str(), code.length(), filePath.filename().string().c_str(), JS_EVAL_TYPE_GLOBAL);
-
-  // Handle exceptions
-  if (JS_IsException(result)) {
-    JSValue exception = JS_GetException(ctx);
-    const char *exception_str = JS_ToCString(ctx, exception);
-    std::cerr << "Exception: " << exception_str << std::endl;
-    JS_FreeCString(ctx, exception_str);
-    JS_FreeValue(ctx, exception);
+  duk_push_lstring(ctx, code.c_str(), code.length());
+  if (duk_peval(ctx) != 0) {
+    std::cerr << "[" << filePath.string() << "] " << duk_safe_to_string(ctx, -1) << std::endl;
   }
 
-  // Clean up the runtime
-  JS_FreeValue(ctx, global);
-  JS_FreeValue(ctx, result);
-  JS_FreeContext(ctx);
-  JS_FreeRuntime(rt);
+  // Clean up the context
+  duk_pop(ctx);
+  duk_destroy_heap(ctx);
 
 }

@@ -11,6 +11,10 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(BUILD_SHARED_LIBS OFF)
 
+# Use link time optimization to reduce executable size.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
+
 # This is used along with an s/e/d to force linking of specific dependencies statically throughout Qt.
 # Currently, that's just xinerama. Other libraries bloat the output binary by a LOT.
 set(FIND_LIBRARY_OVERRIDE_LIST "xcb-xinerama")
@@ -66,6 +70,7 @@ add_executable(SppliceCPP
   tools/repo.cpp
   tools/js.cpp
   tools/netcon.cpp
+  duktape/duktape.c
   ${RESOURCES}
 )
 
@@ -78,7 +83,6 @@ if (SPPLICE_TARGET_WINDOWS) # If building for Windows:
   target_link_libraries(SppliceCPP
     "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/archive.dll"
     "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/liblzma.dll"
-    "${CMAKE_CURRENT_SOURCE_DIR}/quickjs/lib/libquickjs.lto.win32.a"
     "libwininet.a"
     "libws2_32.a"
   )
@@ -98,7 +102,6 @@ else() # If building for Linux:
     ${libacl_STATIC}
     ${libarchive_STATIC}
     ${liblzma_STATIC}
-    "${CMAKE_CURRENT_SOURCE_DIR}/quickjs/lib/libquickjs.lto.linux.a"
   )
 
 endif()
