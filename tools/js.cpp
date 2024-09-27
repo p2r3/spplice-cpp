@@ -4,6 +4,10 @@
 #include <filesystem>
 #include <thread>
 #include <chrono>
+#include <stack>
+#include <QObject>
+#include <QDebug>
+#include <QtWebSockets/QWebSocket>
 #include "../duktape/duktape.h"
 
 #include "../globals.h" // Project globals
@@ -12,6 +16,12 @@
 
 // Definitions for this source file
 #include "js.h"
+
+// Max amount of WebSockets the JS runtime can do
+#define MAX_WEBSOCKETS 32
+// Contains all WebSockets created in the JS environment
+QWebSocket *webSockets[MAX_WEBSOCKETS];
+std::stack<QString> webSocketMessages[MAX_WEBSOCKETS];
 
 // Implements custom functions for the JavaScript context
 struct customJS {
@@ -180,6 +190,116 @@ struct customJS {
     }
   };
 
+  // Implements a WebSocket client interface
+  struct ws {
+    static duk_ret_t connect (duk_context *ctx) {
+
+      const char *url = duk_to_string(ctx, 0);
+      if (!url) return duk_type_error(ctx, "ws.connect: Invalid URL provided");
+
+      int sockid = 0;
+      while (sockid < MAX_WEBSOCKETS) {
+        if (!webSockets[sockid]) break;
+        sockid ++;
+      }
+      if (sockid == MAX_WEBSOCKETS) {
+        return duk_type_error(ctx, "ws.connect: Too many WebSocket connections");
+      }
+
+      QWebSocket *newSocket = new QWebSocket;
+      webSockets[sockid] = newSocket;
+
+      QSslConfiguration sslConfiguration = QSslConfiguration::defaultConfiguration();
+      sslConfiguration.setPeerVerifyMode(QSslSocket::VerifyNone); // Test this carefully, not recommended in production
+      newSocket->setSslConfiguration(sslConfiguration);
+
+      QObject::connect(newSocket, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error), [](QAbstractSocket::SocketError error) {
+        qDebug() << "WebSocket error occurred:" << error;
+      });
+      QObject::connect(newSocket, QOverload<const QList<QSslError>&>::of(&QWebSocket::sslErrors), [](const QList<QSslError> &errors) {
+        for (const QSslError &error : errors) {
+          std::cout << "SSL error: " << error.errorString().toStdString();
+        }
+      });
+
+      QObject::connect(newSocket, &QWebSocket::textMessageReceived, [&](QString message) {
+        if (!newSocket) return;
+        webSocketMessages[sockid].push(message);
+      });
+
+      newSocket->open(QUrl(url));
+
+      duk_push_number(ctx, sockid);
+      return 1;
+
+    }
+    static duk_ret_t disconnect (duk_context *ctx) {
+
+      int argc = duk_get_top(ctx);
+      if (argc == 0) return duk_type_error(ctx, "ws.disconnect: No WebSocket provided");
+
+      int sockid = duk_to_int(ctx, 0);
+      if (sockid < 0 || sockid >= MAX_WEBSOCKETS || !webSockets[sockid]) {
+        return duk_type_error(ctx, "ws.disconnect: Invalid WebSocket provided");
+      }
+
+      int code = argc > 1 ? duk_to_int(ctx, 1) : 1000;
+      QString reason = argc > 2 ? duk_to_string(ctx, 2) : "";
+
+      webSockets[sockid]->close(QWebSocketProtocol::CloseCode(code), reason);
+      webSockets[sockid]->deleteLater();
+
+      webSockets[sockid] = nullptr;
+      while (!webSocketMessages[sockid].empty()) webSocketMessages[sockid].pop();
+
+      return 0;
+
+    }
+    static duk_ret_t state (duk_context *ctx) {
+
+      int sockid = duk_to_int(ctx, 0);
+      if (sockid < 0 || sockid >= MAX_WEBSOCKETS || !webSockets[sockid]) {
+        return duk_type_error(ctx, "ws.state: Invalid WebSocket provided");
+      }
+
+      duk_push_number(ctx, webSockets[sockid]->state());
+      return 1;
+
+    }
+    static duk_ret_t send (duk_context *ctx) {
+
+      int sockid = duk_to_int(ctx, 0);
+      if (sockid < 0 || sockid >= MAX_WEBSOCKETS || !webSockets[sockid]) {
+        return duk_type_error(ctx, "ws.send: Invalid WebSocket provided");
+      }
+
+      const char *data = duk_to_string(ctx, 1);
+      if (!data) return duk_type_error(ctx, "ws.send: Invalid data provided");
+
+      webSockets[sockid]->sendTextMessage(data);
+      return 0;
+
+    }
+    static duk_ret_t read (duk_context *ctx) {
+
+      int sockid = duk_to_int(ctx, 0);
+      if (sockid < 0 || sockid >= MAX_WEBSOCKETS || !webSockets[sockid]) {
+        return duk_type_error(ctx, "ws.read: Invalid WebSocket provided");
+      }
+
+      if (webSocketMessages[sockid].empty()) {
+        duk_push_null(ctx);
+        return 1;
+      }
+
+      const std::string data = webSocketMessages[sockid].top().toStdString();
+
+      duk_push_lstring(ctx, data.c_str(), data.length());
+      return 1;
+
+    }
+  };
+
   struct download {
     static duk_ret_t file (duk_context *ctx) {
 
@@ -274,6 +394,19 @@ void ToolsJS::runFile (const std::filesystem::path &filePath) {
   duk_push_c_function(ctx, customJS::download::string, 1);
   duk_put_prop_string(ctx, obj_idx, "string");
   duk_put_global_string(ctx, "download");
+
+  obj_idx = duk_push_object(ctx);
+  duk_push_c_function(ctx, customJS::ws::connect, 1);
+  duk_put_prop_string(ctx, obj_idx, "connect");
+  duk_push_c_function(ctx, customJS::ws::disconnect, DUK_VARARGS);
+  duk_put_prop_string(ctx, obj_idx, "disconnect");
+  duk_push_c_function(ctx, customJS::ws::state, 1);
+  duk_put_prop_string(ctx, obj_idx, "state");
+  duk_push_c_function(ctx, customJS::ws::send, 2);
+  duk_put_prop_string(ctx, obj_idx, "send");
+  duk_push_c_function(ctx, customJS::ws::read, 1);
+  duk_put_prop_string(ctx, obj_idx, "read");
+  duk_put_global_string(ctx, "ws");
 
   duk_push_c_function(ctx, customJS::sleep, 1);
   duk_put_global_string(ctx, "sleep");

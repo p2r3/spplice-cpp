@@ -30,7 +30,7 @@ cd qt5
 # Checkout to the last available Qt5 LTS version (5.15).
 # This project is built on Qt5, and Qt6 isn't backwards compatible.
 git checkout 5.15
-./init-repository --module-subset=qtbase
+./init-repository --module-subset=qtbase,qtwebsockets
 
 mkdir build
 cd build

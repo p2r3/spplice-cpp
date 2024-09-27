@@ -6,6 +6,7 @@
 #ifndef TARGET_WINDOWS
   #include <unistd.h>
   #include <arpa/inet.h>
+  #include <poll.h>
 #else
   #include <winsock2.h>
   #include <ws2tcpip.h>
@@ -71,13 +72,29 @@ bool ToolsNetCon::sendCommand (int sockfd, std::string command) {
 // Reads the given amount of bytes from the telnet console on the given socket
 std::string ToolsNetCon::readConsole (int sockfd, size_t size) {
 
+  // Check if data is available for reading
+  struct pollfd pfd;
+  pfd.fd = sockfd;
+  pfd.events = POLLIN;
+
+  // Timeout of 0, don't wait for data to become available
+  int result = poll(&pfd, 1, 0);
+
+  // Handle the poll result
+  if (result == -1) {
+    std::cerr << "Failed to receive data from telnet server." << std::endl;
+    return "";
+  } else if (result == 0 || !(pfd.revents & POLLIN)) {
+    return "";
+  }
+
   // Initialize an empty buffer
   char buffer[size];
   memset(buffer, 0, size);
 
   // Attempt to receive data
   int received = recv(sockfd, buffer, size, 0);
-  if (received < 0) {
+  if (received <= 0) {
     std::cerr << "Failed to receive data from telnet server." << std::endl;
     return "";
   }

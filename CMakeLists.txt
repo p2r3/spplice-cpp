@@ -49,12 +49,15 @@ endfunction()
 # Set the exact Qt path (what "qt5setup.sh" builds) for the respective platform
 if (SPPLICE_TARGET_WINDOWS)
   set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/win32/lib/cmake/Qt5Widgets")
+  set(Qt5WebSockets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/win32/lib/cmake/Qt5WebSockets")
 else()
   set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/linux/lib/cmake/Qt5Widgets")
+  set(Qt5WebSockets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/linux/lib/cmake/Qt5WebSockets")
 endif()
 
 # Find Qt5Widgets.
 find_package(Qt5 REQUIRED COMPONENTS Widgets)
+find_package(Qt5 REQUIRED COMPONENTS WebSockets)
 
 # Add resources file
 qt_add_resources(RESOURCES resources.qrc)
@@ -76,6 +79,7 @@ add_executable(SppliceCPP
 
 # Link Qt5Widgets
 target_link_libraries(SppliceCPP Qt5::Widgets)
+target_link_libraries(SppliceCPP Qt5::WebSockets)
 
 # Finally, link our project's individual dependencies.
 if (SPPLICE_TARGET_WINDOWS) # If building for Windows:
