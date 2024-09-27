@@ -9,11 +9,9 @@
 #include "curl.h"
 
 #ifndef TARGET_WINDOWS
-  // If on Linux, include the system's CURL
-  #include "curl/curl.h"
+  #include "../deps/linux/include/curl/curl.h"
 #else
-  // If on Windows, include the CURL from windeps.sh
-  #include "../win/include/curl/curl.h"
+  #include "../deps/win32/include/curl/curl.h"
 #endif
 
 // Initializes CURL globally
@@ -192,7 +190,7 @@ std::string ToolsCURL::wsReceive (CURL *curl, size_t size) {
   char buffer[size];
 
   // Receive the message
-  struct curl_ws_frame *meta;
+  const struct curl_ws_frame *meta;
   CURLcode response = curl_ws_recv(curl, buffer, sizeof(buffer), &rlen, &meta);
 
   // If the socket is not ready, assume there's just no data to be read

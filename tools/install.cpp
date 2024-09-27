@@ -8,20 +8,25 @@
 #include <cstdlib>
 #include <thread>
 #include <chrono>
-#include <archive.h>
-#include <archive_entry.h>
+
 #include "../globals.h" // Project globals
 #include "curl.h" // ToolsCURL
 #include "qt.h" // ToolsQT
 #include "js.h" // ToolsJS
 
 #ifdef TARGET_WINDOWS
+  #include "../deps/win32/include/archive.h"
+  #include "../deps/win32/include/archive_entry.h"
+
   #include <windows.h>
   #include <tlhelp32.h>
   #include <psapi.h>
   #include <locale>
   #include <codecvt>
 #else
+  #include <archive.h>
+  #include <archive_entry.h>
+
   #include <sys/stat.h>
   #include <unistd.h>
 #endif

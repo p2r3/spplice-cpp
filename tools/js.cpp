@@ -4,14 +4,12 @@
 #include <filesystem>
 #include <thread>
 #include <chrono>
-#include "../duktape/duktape.h"
+#include "../deps/shared/duktape/duktape.h"
 
 #ifndef TARGET_WINDOWS
-  // If on Linux, include the system's CURL
-  #include "curl/curl.h"
+  #include "../deps/linux/include/curl/curl.h"
 #else
-  // If on Windows, include the CURL from windeps.sh
-  #include "../win/include/curl/curl.h"
+  #include "../deps/win32/include/curl/curl.h"
 #endif
 
 #include "../globals.h" // Project globals

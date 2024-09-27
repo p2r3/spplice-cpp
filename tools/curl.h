@@ -4,11 +4,9 @@
 #include <filesystem>
 
 #ifndef TARGET_WINDOWS
-  // If on Linux, include the system's CURL
-  #include "curl/curl.h"
+  #include "../deps/linux/include/curl/curl.h"
 #else
-  // If on Windows, include the CURL from windeps.sh
-  #include "../win/include/curl/curl.h"
+  #include "../deps/win32/include/curl/curl.h"
 #endif
 
 class ToolsCURL {

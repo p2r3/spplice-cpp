@@ -4,5 +4,4 @@ ui/*.h
 qt5
 qt5build
 fonts
-win
-duktape
+deps

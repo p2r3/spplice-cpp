@@ -34,6 +34,7 @@ git checkout 5.15
 
 mkdir build
 cd build
+make clean
 
 function configure_linux {
   ../configure -release -opensource -confirm-license \

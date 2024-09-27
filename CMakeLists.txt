@@ -70,7 +70,7 @@ add_executable(SppliceCPP
   tools/repo.cpp
   tools/js.cpp
   tools/netcon.cpp
-  duktape/duktape.c
+  deps/shared/duktape/duktape.c
   ${RESOURCES}
 )
 
@@ -81,9 +81,9 @@ target_link_libraries(SppliceCPP Qt5::Widgets)
 if (SPPLICE_TARGET_WINDOWS) # If building for Windows:
 
   target_link_libraries(SppliceCPP
-    "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/archive.dll"
-    "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/liblzma.dll"
-    "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/libcurl-x64.dll"
+    "${CMAKE_CURRENT_SOURCE_DIR}/deps/win32/lib/archive.dll"
+    "${CMAKE_CURRENT_SOURCE_DIR}/deps/win32/lib/liblzma.dll"
+    "${CMAKE_CURRENT_SOURCE_DIR}/deps/win32/lib/libcurl-x64.dll"
     "libwininet.a"
     "libws2_32.a"
   )
@@ -98,11 +98,18 @@ else() # If building for Linux:
   # Then, link the libraries to our binary.
   target_link_libraries(SppliceCPP
     # Dynamically linked libraries
-    curl
+    nghttp2
+    idn2
+    psl
+    ssl
+    crypto
+    zstd
+    z
     # Statically linked libraries
     ${libacl_STATIC}
     ${libarchive_STATIC}
     ${liblzma_STATIC}
+    "${CMAKE_CURRENT_SOURCE_DIR}/deps/linux/lib/libcurl.a"
   )
 
 endif()
