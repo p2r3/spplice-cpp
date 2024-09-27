@@ -15,6 +15,10 @@
 // Definitions for this source file
 #include "netcon.h"
 
+// Counts the amount of open netcon sockets for setup and cleanup
+// I have absolutely no idea why you'd ever need more than one, but oh well...
+int openSockets = 0;
+
 // Closes the given socket
 void ToolsNetCon::disconnect (int sockfd)
 #ifndef TARGET_WINDOWS
@@ -24,11 +28,22 @@ void ToolsNetCon::disconnect (int sockfd)
 #else
 {
   closesocket(sockfd);
+  // Clean up Winsock if all sockets have closed
+  if (--openSockets == 0) WSACleanup();
 }
 #endif
 
 // Attempts to connect to the game's telnet console on SPPLICE_NETCON_PORT
 int ToolsNetCon::attemptConnection () {
+
+  // If this is the first socket we've made, set up Winsock
+  if (++openSockets == 1) {
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+      std::cerr << "WSAStartup failed." << std::endl;
+      return -1;
+    }
+  }
 
   // Create a socket
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
