@@ -185,15 +185,18 @@ bool ToolsCURL::wsSend (CURL *curl, const std::string &message) {
 
 }
 
-std::string ToolsCURL::wsReceive (CURL *curl) {
+std::string ToolsCURL::wsReceive (CURL *curl, size_t size) {
 
   // Set up a buffer for the incoming message
   size_t rlen;
-  char buffer[1024];
+  char buffer[size];
 
   // Receive the message
   struct curl_ws_frame *meta;
   CURLcode response = curl_ws_recv(curl, buffer, sizeof(buffer), &rlen, &meta);
+
+  // If the socket is not ready, assume there's just no data to be read
+  if (response == CURLE_AGAIN) return "";
 
   // Log errors, return empty string if response not OK
   if (response != CURLE_OK) {

@@ -6,12 +6,25 @@
 #include <chrono>
 #include "../duktape/duktape.h"
 
+#ifndef TARGET_WINDOWS
+  // If on Linux, include the system's CURL
+  #include "curl/curl.h"
+#else
+  // If on Windows, include the CURL from windeps.sh
+  #include "../win/include/curl/curl.h"
+#endif
+
 #include "../globals.h" // Project globals
 #include "netcon.h" // ToolsNetCon
 #include "curl.h" // ToolsCURL
 
 // Definitions for this source file
 #include "js.h"
+
+// Max amount of WebSockets the JS environment can allocate
+#define MAX_WEBSOCKETS 32
+// Contains all WebSockets created in the JS environment
+CURL *webSockets[MAX_WEBSOCKETS];
 
 // Implements custom functions for the JavaScript context
 struct customJS {
@@ -180,6 +193,86 @@ struct customJS {
     }
   };
 
+  // Implements a WebSocket client interface
+  struct ws {
+    static duk_ret_t connect (duk_context *ctx) {
+
+      const char *url = duk_to_string(ctx, 0);
+      if (!url) return duk_type_error(ctx, "ws.connect: Invalid URL provided");
+
+      int sockid = 0;
+      while (sockid < MAX_WEBSOCKETS) {
+        if (!webSockets[sockid]) break;
+        sockid ++;
+      }
+      if (sockid == MAX_WEBSOCKETS) {
+        return duk_type_error(ctx, "ws.connect: Too many WebSocket connections");
+      }
+
+      // Attempt connection
+      CURL *newSocket = ToolsCURL::wsConnect(url);
+
+      // If the connection failed, return null
+      if (!newSocket) {
+        duk_push_null(ctx);
+        return 1;
+      }
+
+      // Add the newly created socket to the array
+      webSockets[sockid] = newSocket;
+
+      // Add 1 to sockid so that a good socket wouldn't be falsy
+      duk_push_number(ctx, sockid + 1);
+      return 1;
+
+    }
+    static duk_ret_t disconnect (duk_context *ctx) {
+
+      int sockid = duk_to_int(ctx, 0) - 1;
+      if (sockid < 0 || sockid >= MAX_WEBSOCKETS || !webSockets[sockid]) {
+        return duk_type_error(ctx, "ws.disconnect: Invalid WebSocket provided");
+      }
+
+      // Close the socket
+      ToolsCURL::wsDisconnect(webSockets[sockid]);
+      // Free the socket ID
+      webSockets[sockid] = nullptr;
+
+      return 0;
+
+    }
+    static duk_ret_t send (duk_context *ctx) {
+
+      int sockid = duk_to_int(ctx, 0) - 1;
+      if (sockid < 0 || sockid >= MAX_WEBSOCKETS || !webSockets[sockid]) {
+        return duk_type_error(ctx, "ws.send: Invalid WebSocket provided");
+      }
+
+      const char *data = duk_to_string(ctx, 1);
+      if (!data) return duk_type_error(ctx, "ws.send: Invalid data provided");
+
+      duk_push_boolean(ctx, ToolsCURL::wsSend(webSockets[sockid], data));
+      return 1;
+
+    }
+    static duk_ret_t read (duk_context *ctx) {
+
+      int sockid = duk_to_int(ctx, 0) - 1;
+      if (sockid < 0 || sockid >= MAX_WEBSOCKETS || !webSockets[sockid]) {
+        return duk_type_error(ctx, "ws.read: Invalid WebSocket provided");
+      }
+
+      size_t size = duk_to_uint(ctx, 1);
+      if (!size) size = 1024;
+
+      const std::string data = ToolsCURL::wsReceive(webSockets[sockid], size);
+
+      duk_push_lstring(ctx, data.c_str(), data.length());
+      return 1;
+
+    }
+  };
+
   struct download {
     static duk_ret_t file (duk_context *ctx) {
 
@@ -274,6 +367,17 @@ void ToolsJS::runFile (const std::filesystem::path &filePath) {
   duk_push_c_function(ctx, customJS::download::string, 1);
   duk_put_prop_string(ctx, obj_idx, "string");
   duk_put_global_string(ctx, "download");
+
+  obj_idx = duk_push_object(ctx);
+  duk_push_c_function(ctx, customJS::ws::connect, 1);
+  duk_put_prop_string(ctx, obj_idx, "connect");
+  duk_push_c_function(ctx, customJS::ws::disconnect, 1);
+  duk_put_prop_string(ctx, obj_idx, "disconnect");
+  duk_push_c_function(ctx, customJS::ws::send, 2);
+  duk_put_prop_string(ctx, obj_idx, "send");
+  duk_push_c_function(ctx, customJS::ws::read, 2);
+  duk_put_prop_string(ctx, obj_idx, "read");
+  duk_put_global_string(ctx, "ws");
 
   duk_push_c_function(ctx, customJS::sleep, 1);
   duk_put_global_string(ctx, "sleep");

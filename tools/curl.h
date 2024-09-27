@@ -22,7 +22,7 @@ class ToolsCURL {
     static CURL* wsConnect (const std::string &url);
     static void wsDisconnect (CURL *curl);
     static bool wsSend (CURL *curl, const std::string &message);
-    static std::string wsReceive (CURL *curl);
+    static std::string wsReceive (CURL *curl, size_t size);
 };
 
 #endif
