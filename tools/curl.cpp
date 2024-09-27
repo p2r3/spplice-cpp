@@ -1,6 +1,3 @@
-// Despite the name of this file, these are generic tools for downloading files/strings
-// These only use CURL on Linux, as Windows has its own approach
-
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -12,7 +9,21 @@
 #include "curl.h"
 
 #ifndef TARGET_WINDOWS
-#include "curl/curl.h"
+  // If on Linux, include the system's CURL
+  #include "curl/curl.h"
+#else
+  // If on Windows, include the CURL from windeps.sh
+  #include "../win/include/curl/curl.h"
+#endif
+
+// Initializes CURL globally
+void ToolsCURL::init () {
+  curl_global_init(CURL_GLOBAL_DEFAULT);
+}
+// Cleans up CURL globally
+void ToolsCURL::cleanup () {
+  curl_global_cleanup();
+}
 
 // CURL write callback function for appending to a string
 size_t ToolsCURL::curlStringWriteCallback (void *contents, size_t size, size_t nmemb, void *userp) {
@@ -52,6 +63,12 @@ bool ToolsCURL::downloadFile (const std::string &url, const std::filesystem::pat
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ofs);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
+#ifdef TARGET_WINDOWS
+  // TODO: Build CURL with Schannel on Windows
+  // This should *NOT* be here in the final release
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+#endif
+
   CURLcode response = curl_easy_perform(curl);
 
   // Clean up CURL
@@ -85,6 +102,12 @@ std::string ToolsCURL::downloadString (const std::string &url) {
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
+#ifdef TARGET_WINDOWS
+  // TODO: Build CURL with Schannel on Windows
+  // This should *NOT* be here in the final release
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+#endif
+
   // Perform the request
   CURLcode response = curl_easy_perform(curl);
 
@@ -100,107 +123,3 @@ std::string ToolsCURL::downloadString (const std::string &url) {
   return readBuffer;
 
 }
-
-#endif // ifndef TARGET_WINDOWS
-
-#ifdef TARGET_WINDOWS
-#include <windows.h>
-#include <wininet.h>
-
-bool ToolsCURL::downloadFile (const std::string &url, const std::filesystem::path outputPath) {
-
-  // Convert std::string to std::wstring
-  std::wstring wideUrl(url.begin(), url.end());
-  std::wstring wideOutputPath = outputPath.wstring();
-
-  HINTERNET hInternet = InternetOpenW(L"File Downloader", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
-  if (!hInternet) {
-    std::cerr << "InternetOpenW failed: " << GetLastError() << std::endl;
-    return false;
-  }
-
-  HINTERNET hConnect = InternetOpenUrlW(hInternet, wideUrl.c_str(), NULL, 0, INTERNET_FLAG_RELOAD, 0);
-  if (!hConnect) {
-    std::cerr << "InternetOpenUrlW failed: " << GetLastError() << std::endl;
-    InternetCloseHandle(hInternet);
-    return false;
-  }
-
-  HANDLE hFile = CreateFileW(wideOutputPath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-  if (hFile == INVALID_HANDLE_VALUE) {
-    std::cerr << "CreateFileW failed: " << GetLastError() << std::endl;
-    InternetCloseHandle(hConnect);
-    InternetCloseHandle(hInternet);
-    return false;
-  }
-
-  char buffer[4096];
-  DWORD bytesRead;
-  BOOL result;
-
-  while ((result = InternetReadFile(hConnect, buffer, sizeof(buffer), &bytesRead)) && bytesRead > 0) {
-    DWORD bytesWritten;
-    WriteFile(hFile, buffer, bytesRead, &bytesWritten, NULL);
-    if (bytesWritten != bytesRead) {
-      std::cerr << "WriteFile failed: " << GetLastError() << std::endl;
-      CloseHandle(hFile);
-      InternetCloseHandle(hConnect);
-      InternetCloseHandle(hInternet);
-      return false;
-    }
-  }
-
-  if (!result) {
-    std::cerr << "InternetReadFile failed: " << GetLastError() << std::endl;
-  }
-
-  CloseHandle(hFile);
-  InternetCloseHandle(hConnect);
-  InternetCloseHandle(hInternet);
-  return true;
-
-}
-
-std::string ToolsCURL::downloadString (const std::string &url) {
-
-  // Convert std::string to std::wstring
-  std::wstring wideUrl(url.begin(), url.end());
-
-  // Initialize WinINet
-  HINTERNET hInternet = InternetOpenW(L"String Downloader", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
-  if (!hInternet) {
-    std::cerr << "InternetOpenW failed: " << GetLastError() << std::endl;
-    return "";
-  }
-
-  // Open the URL
-  HINTERNET hConnect = InternetOpenUrlW(hInternet, wideUrl.c_str(), NULL, 0, INTERNET_FLAG_RELOAD, 0);
-  if (!hConnect) {
-    std::cerr << "InternetOpenUrlW failed: " << GetLastError() << std::endl;
-    InternetCloseHandle(hInternet);
-    return "";
-  }
-
-  // Read data from the URL
-  std::string result;
-  char buffer[4096];
-  DWORD bytesRead;
-  BOOL readResult;
-
-  while ((readResult = InternetReadFile(hConnect, buffer, sizeof(buffer), &bytesRead)) && bytesRead > 0) {
-    result.append(buffer, bytesRead);
-  }
-
-  if (!readResult) {
-    std::cerr << "InternetReadFile failed: " << GetLastError() << std::endl;
-  }
-
-  // Clean up
-  InternetCloseHandle(hConnect);
-  InternetCloseHandle(hInternet);
-
-  return result;
-
-}
-
-#endif // ifdef TARGET_WINDOWS

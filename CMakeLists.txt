@@ -83,6 +83,7 @@ if (SPPLICE_TARGET_WINDOWS) # If building for Windows:
   target_link_libraries(SppliceCPP
     "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/archive.dll"
     "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/liblzma.dll"
+    "${CMAKE_CURRENT_SOURCE_DIR}/win/lib/libcurl-x64.dll"
     "libwininet.a"
     "libws2_32.a"
   )

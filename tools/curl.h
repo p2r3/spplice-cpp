@@ -5,6 +5,9 @@
 
 class ToolsCURL {
   public:
+    static void init ();
+    static void cleanup ();
+
     static size_t curlStringWriteCallback (void *contents, size_t size, size_t nmemb, void *userp);
     static size_t curlFileWriteCallback(void *contents, size_t size, size_t nmemb, void *userp);
 

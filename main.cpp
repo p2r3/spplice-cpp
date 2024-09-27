@@ -20,11 +20,6 @@
 // Project globals
 #include "globals.h"
 
-#ifndef TARGET_WINDOWS
-// Global CURL initialization
-#include "curl/curl.h"
-#endif
-
 // Project-related tools, split up into files
 #include "tools/curl.h"
 #include "tools/qt.h"
@@ -58,10 +53,8 @@ int main (int argc, char *argv[]) {
   Ui::MainWindow windowUI;
   windowUI.setupUi(&window);
 
-#ifndef TARGET_WINDOWS
-  // Initialize libcurl globally
-  curl_global_init(CURL_GLOBAL_DEFAULT);
-#endif
+  // Initialize CURL
+  ToolsCURL::init();
 
   // Create a vector containing all packages from all repositories
   std::vector<const ToolsPackage::PackageData*> allPackages;
@@ -185,10 +178,8 @@ int main (int argc, char *argv[]) {
 
   }
 
-#ifndef TARGET_WINDOWS
   // Clean up CURL
-  curl_global_cleanup();
-#endif
+  ToolsCURL::cleanup();
 
   // Display the main application window
   window.setWindowTitle("Spplice");
