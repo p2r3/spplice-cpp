@@ -26,13 +26,13 @@ void ToolsCURL::cleanup () {
 }
 
 // CURL write callback function for appending to a string
-size_t ToolsCURL::curlStringWriteCallback (void *contents, size_t size, size_t nmemb, void *userp) {
+size_t curlStringWriteCallback (void *contents, size_t size, size_t nmemb, void *userp) {
   ((std::string*)userp)->append((char*)contents, size *nmemb);
   return size *nmemb;
 }
 
 // CURL write callback function for writing to a file
-size_t ToolsCURL::curlFileWriteCallback (void *contents, size_t size, size_t nmemb, void *userp) {
+size_t curlFileWriteCallback (void *contents, size_t size, size_t nmemb, void *userp) {
   std::ofstream *ofs = static_cast<std::ofstream *>(userp);
   size_t totalSize = size * nmemb;
   ofs->write(static_cast<const char *>(contents), totalSize);
@@ -59,7 +59,7 @@ bool ToolsCURL::downloadFile (const std::string &url, const std::filesystem::pat
 
   // Set request parameters
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ToolsCURL::curlFileWriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlFileWriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ofs);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
@@ -98,7 +98,7 @@ std::string ToolsCURL::downloadString (const std::string &url) {
 
   // Set request parameters
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ToolsCURL::curlStringWriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlStringWriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
