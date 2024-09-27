@@ -178,8 +178,8 @@ int main (int argc, char *argv[]) {
 
   }
 
-  // Clean up CURL
-  ToolsCURL::cleanup();
+  // Clean up CURL on program termination
+  std::atexit(ToolsCURL::cleanup);
 
   // Display the main application window
   window.setWindowTitle("Spplice");
