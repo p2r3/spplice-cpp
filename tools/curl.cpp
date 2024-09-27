@@ -123,3 +123,85 @@ std::string ToolsCURL::downloadString (const std::string &url) {
   return readBuffer;
 
 }
+
+// Creates a WebSocket connection, returns the respective CURL handle
+CURL* ToolsCURL::wsConnect (const std::string &url) {
+
+  // Initialize CURL
+  CURL *curl = curl_easy_init();
+
+  if (!curl) {
+    std::cerr << "Failed to initialize CURL" << std::endl;
+    return nullptr;
+  }
+
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 2L);
+
+#ifdef TARGET_WINDOWS
+  // TODO: Build CURL with Schannel on Windows
+  // This should *NOT* be here in the final release
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+#endif
+
+  // Perform the request
+  CURLcode response = curl_easy_perform(curl);
+
+  // Check for errors
+  if (response != CURLE_OK) {
+    std::cerr << "Failed to connect to \"" << url << "\": " << curl_easy_strerror(response) << std::endl;
+    return nullptr;
+  }
+
+  return curl;
+
+}
+
+// Disconnects a WebSocket connection and cleans up the CURL handle
+void ToolsCURL::wsDisconnect (CURL *curl) {
+
+  // Send a WebSocket close event
+  size_t sent;
+  curl_ws_send(curl, "", 0, &sent, 0, CURLWS_CLOSE);
+
+  // Clean up CURL
+  curl_easy_cleanup(curl);
+
+}
+
+bool ToolsCURL::wsSend (CURL *curl, const std::string &message) {
+
+  // Send the given message as text
+  size_t sent;
+  CURLcode response = curl_ws_send(curl, message.c_str(), message.length(), &sent, 0, CURLWS_TEXT);
+
+  // Log errors, return false if response not OK
+  if (response != CURLE_OK) {
+    std::cerr << "Failed to send message to WebSocket: " << curl_easy_strerror(response) << std::endl;
+    return false;
+  }
+
+  return true;
+
+}
+
+std::string ToolsCURL::wsReceive (CURL *curl) {
+
+  // Set up a buffer for the incoming message
+  size_t rlen;
+  char buffer[1024];
+
+  // Receive the message
+  const struct curl_ws_frame *meta;
+  CURLcode response = curl_ws_recv(curl, buffer, sizeof(buffer), &rlen, &meta);
+
+  // Log errors, return empty string if response not OK
+  if (response != CURLE_OK) {
+    std::cerr << "Failed to receive message from WebSocket: " << curl_easy_strerror(response) << std::endl;
+    return "";
+  }
+
+  // Return a string representation of the buffer
+  return std::string(buffer, rlen);
+
+}
