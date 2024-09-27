@@ -85,8 +85,8 @@ bool ToolsNetCon::sendCommand (int sockfd, std::string command) {
 
 // Close our eyes and pretend Windows poll is the same as Linux
 #ifdef TARGET_WINDOWS
-  #define pollfd WSAPOLLFD
-  #define poll WSAPoll
+  #define pollfd(a) WSAPOLLFD(a)
+  #define poll(a, b, c) WSAPoll(a, b, c)
 #else
   #define SOCKET_ERROR -1
 #endif
