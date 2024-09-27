@@ -36,6 +36,7 @@ void ToolsNetCon::disconnect (int sockfd)
 // Attempts to connect to the game's telnet console on SPPLICE_NETCON_PORT
 int ToolsNetCon::attemptConnection () {
 
+#ifdef TARGET_WINDOWS
   // If this is the first socket we've made, set up Winsock
   if (++openSockets == 1) {
     WSADATA wsaData;
@@ -44,6 +45,7 @@ int ToolsNetCon::attemptConnection () {
       return -1;
     }
   }
+#endif
 
   // Create a socket
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);

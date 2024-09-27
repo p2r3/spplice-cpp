@@ -192,7 +192,7 @@ std::string ToolsCURL::wsReceive (CURL *curl) {
   char buffer[1024];
 
   // Receive the message
-  const struct curl_ws_frame *meta;
+  struct curl_ws_frame *meta;
   CURLcode response = curl_ws_recv(curl, buffer, sizeof(buffer), &rlen, &meta);
 
   // Log errors, return empty string if response not OK
