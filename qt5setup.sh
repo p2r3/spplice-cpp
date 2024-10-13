@@ -15,13 +15,14 @@ if [ "$target_both" == true ]; then
   echo "Building Qt5 for Linux and Windows..."
 elif [ "$target_windows" == true ]; then
   echo "Building Qt5 for Windows..."
+  rm -rf ./qt5build/win32
 else
   echo "Building Qt5 for Linux..."
+  rm -rf ./qt5build/linux
 fi
 
 # Ensure a clean start.
 rm -rf ./qt5
-rm -rf ./qt5build
 
 # Clone the Qt5 repository from their provided git URL.
 git clone git://code.qt.io/qt/qt5.git
@@ -57,7 +58,6 @@ function configure_win32 {
   export HOST_COMPILER=g++
   export CROSS_COMPILE=x86_64-w64-mingw32-
   ../configure -release -opensource -confirm-license \
-    -static \
     -qt-libjpeg -qt-libpng -no-gif \
     -qt-pcre \
     -no-icu \

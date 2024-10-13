@@ -5,3 +5,5 @@ qt5
 qt5build
 fonts
 deps
+dist
+setup/Output

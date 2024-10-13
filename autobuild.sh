@@ -31,9 +31,20 @@ cd ui
 ../qt5build/linux/bin/uic -o packageinfo.h PackageInfo.ui
 cd ..
 
-# Clear any build cache - building it is fast enough to not really need a cache.
+# Build application dependencies if not present
+if [ ! -d "./deps" ]; then
+  ./deps.sh
+fi
+
 rm -rf build
 mkdir build
+
+# Create a directory for the distributable files.
+rm -rf dist
+mkdir dist
+mkdir dist/linux
+mkdir dist/win32
+
 cd build
 
 if [ "$target_both" == true ]; then
@@ -42,17 +53,13 @@ if [ "$target_both" == true ]; then
   sed -i "s|^#define TARGET_WINDOWS|// #define TARGET_WINDOWS|" ../globals.h
   cmake ..
   make -j$(nproc)
-  mv ./SppliceCPP ../build_SppliceCPP
+  mv ./SppliceCPP ../dist/linux/SppliceCPP
   rm -rf ./*
 
   sed -i "s|^// #define TARGET_WINDOWS|#define TARGET_WINDOWS|" ../globals.h
   cmake -DCMAKE_TOOLCHAIN_FILE="../windows.cmake" ..
   make -j$(nproc)
-  mv ./SppliceCPP.exe ../build_SppliceCPP.exe
-  rm -rf ./*
-
-  mv ../build_SppliceCPP ./SppliceCPP
-  mv ../build_SppliceCPP.exe ./SppliceCPP.exe
+  mv ./SppliceCPP.exe ../dist/win32/SppliceCPP.exe
 
 else
 
@@ -64,6 +71,42 @@ else
   fi
   make -j$(nproc)
 
+  # Move the output binary to distributables directory.
+  if [ "$target_windows" == true ]; then
+    mv ./SppliceCPP.exe ../dist/win32/SppliceCPP.exe
+  else
+    mv ./SppliceCPP ../dist/linux/SppliceCPP
+  fi
+
 fi
 
+# Clear any residual build cache.
 cd ..
+rm -rf build
+
+cd dist
+
+# Prepare the Windows binary for distribution.
+if [ "$target_windows" == true ] || [ "$target_both" == true ]; then
+  # Copy project dependencies
+  cp ../deps/win32/lib/libcurl-x64.dll                             ./win32
+  cp ../deps/win32/lib/archive.dll                                 ./win32
+  cp ../deps/win32/lib/liblzma.dll                                 ./win32
+  cp ../deps/win32/lib/libcrypto-1_1-x64.dll                       ./win32
+  # Copy Qt5 dependencies
+  cp ../qt5build/win32/bin/Qt5Core.dll                             ./win32
+  cp ../qt5build/win32/bin/Qt5Gui.dll                              ./win32
+  cp ../qt5build/win32/bin/Qt5Widgets.dll                          ./win32
+  # Copt Qt5 Windows platform library
+  mkdir ./win32/platforms;
+  cp ../qt5build/win32/plugins/platforms/qwindows.dll              ./win32/platforms
+  # Copy C++ dependencies
+  cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll               ./win32
+  cp /usr/lib/gcc/x86_64-w64-mingw32/12-posix/libgcc_s_seh-1.dll   ./win32
+  cp /usr/lib/gcc/x86_64-w64-mingw32/12-posix/libstdc++-6.dll      ./win32
+fi
+
+if [ "$target_windows" == false ] || [ "$target_both" == true ]; then
+  # Pack with UPX
+  ../deps/shared/upx/upx --best --lzma ./linux/SppliceCPP
+fi

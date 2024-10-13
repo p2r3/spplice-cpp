@@ -48,8 +48,10 @@ endfunction()
 
 # Set the exact Qt path (what "qt5setup.sh" builds) for the respective platform
 if (SPPLICE_TARGET_WINDOWS)
+  set(Qt5_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/win32/lib/cmake/Qt5")
   set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/win32/lib/cmake/Qt5Widgets")
 else()
+  set(Qt5_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/linux/lib/cmake/Qt5")
   set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/linux/lib/cmake/Qt5Widgets")
 endif()
 
@@ -81,9 +83,9 @@ target_link_libraries(SppliceCPP Qt5::Widgets)
 if (SPPLICE_TARGET_WINDOWS) # If building for Windows:
 
   target_link_libraries(SppliceCPP
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/win32/lib/archive.dll"
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/win32/lib/liblzma.dll"
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/win32/lib/libcurl-x64.dll"
+    "archive.dll"
+    "liblzma.dll"
+    "libcurl-x64.dll"
     "libwininet.a"
     "libws2_32.a"
   )

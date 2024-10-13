@@ -10,7 +10,7 @@ set(CMAKE_RC_COMPILER x86_64-w64-mingw32-windres)
 set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_LIST_DIR}/qt5build/win32")
 
 # Specify where to find dependencies
-include_directories("${CMAKE_CURRENT_LIST_DIR}/win/include")
-link_directories("${CMAKE_CURRENT_LIST_DIR}/win/lib")
+include_directories("${CMAKE_CURRENT_LIST_DIR}/deps/win32/include")
+link_directories("${CMAKE_CURRENT_LIST_DIR}/deps/win32/lib")
 
 set(SPPLICE_TARGET_WINDOWS TRUE)

@@ -19,6 +19,11 @@ mkdir shared
     mv ./duktape-2.7.0/src ./duktape
     rm -rf duktape-2.7.0
 
+    wget https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz
+    tar -xf ./upx-4.2.4-amd64_linux.tar.xz
+    rm ./upx-4.2.4-amd64_linux.tar.xz
+    mv ./upx-4.2.4-amd64_linux ./upx
+
   cd ..
 
 # Build Windows dependencies
@@ -43,6 +48,13 @@ mkdir shared
       mv ./libarchive/lib/* ../lib
       mv ./libarchive/include/* ../include
     cd ..; rm -rf archive
+
+    mkdir openssl; cd openssl
+      wget https://wiki.overbyte.eu/arch/openssl-1.1.1w-win64.zip
+      unzip openssl-1.1.1w-win64.zip
+      mv ./*.exe ../bin
+      mv ./*.dll ../lib
+    cd ..; rm -rf openssl
 
     mkdir curl; cd curl
       wget https://curl.se/windows/dl-8.10.1_2/curl-8.10.1_2-win64-mingw.zip
@@ -78,6 +90,7 @@ mkdir shared
   cd ..
 
   if command -v apt > /dev/null; then
+
     echo "Checking for necessary -dev packages..."
     sudo apt install \
       libarchive-dev \
@@ -87,5 +100,20 @@ mkdir shared
       libgl1-mesa-dev \
       libxcb*-dev \
       libfontconfig1-dev \
-      libxkbcommon-x11-dev
+      libxkbcommon-x11-dev \
+      libpsl-dev \
+      libnghttp2-dev \
+      libidn2-dev
+
+    echo "Checking for MinGW for cross-compilation..."
+    sudo apt install \
+      mingw-w64 \
+      mingw-w64-tools \
+      gcc-mingw-w64-x86-64 \
+      g++-mingw-w64-x86-64
+
+    echo "Switching to POSIX threads..."
+    sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+    sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+
   fi
