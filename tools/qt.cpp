@@ -54,7 +54,7 @@ QPixmap ToolsQT::getRoundedPixmap (const QPixmap &src, int radius) {
 
 }
 
-void ToolsQT::displayErrorPopup (const std::string &title, const std::string &message) {
+void ToolsQT::displayErrorPopup (const std::string title, const std::string message) {
 
   QDialog *dialog = new QDialog;
   Ui::ErrorDialog dialogUI;
