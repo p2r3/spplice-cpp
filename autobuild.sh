@@ -40,14 +40,14 @@ rm -rf build
 mkdir build
 
 # Create a directory for the distributable files.
-rm -rf dist
 mkdir dist
-mkdir dist/linux
-mkdir dist/win32
 
 cd build
 
 if [ "$target_both" == true ]; then
+
+  rm -rf ../dist/linux; mkdir ../dist/linux
+  rm -rf ../dist/win32; mkdir ../dist/win32
 
   # Build for both platforms back to back.
   sed -i "s|^#define TARGET_WINDOWS|// #define TARGET_WINDOWS|" ../globals.h
@@ -65,8 +65,10 @@ else
 
   # Build for the specified platform using CMake.
   if [ "$target_windows" == true ]; then
+    rm -rf ../dist/win32; mkdir ../dist/win32
     cmake -DCMAKE_TOOLCHAIN_FILE="../windows.cmake" ..
   else
+    rm -rf ../dist/linux; mkdir ../dist/linux
     cmake ..
   fi
   make -j$(nproc)
