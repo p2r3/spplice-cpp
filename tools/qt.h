@@ -8,6 +8,7 @@
 
 class ToolsQT {
   public:
+    static QPixmap getPixmapFromPath (const std::filesystem::path &path, const QSize size);
     static QPixmap getRoundedPixmap (const QPixmap &src, int radius);
     static void displayErrorPopup (const std::string &title, const std::string &message);
 };

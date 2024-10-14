@@ -86,11 +86,7 @@ void PackageItemWorker::getPackageIcon (const ToolsPackage::PackageData *package
   }
 
   // Create a pixmap for the icon
-#ifndef TARGET_WINDOWS
-  QPixmap iconPixmap = QPixmap(QString::fromStdString(imagePath.string())).scaled(iconSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-#else
-  QPixmap iconPixmap = QPixmap(QString::fromStdWString(imagePath.wstring())).scaled(iconSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-#endif
+  QPixmap iconPixmap = ToolsQT::getPixmapFromPath(imagePath, iconSize);
   QPixmap iconRoundedPixmap = ToolsQT::getRoundedPixmap(iconPixmap, 10);
 
   // Set the package icon
