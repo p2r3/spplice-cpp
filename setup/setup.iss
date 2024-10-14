@@ -52,7 +52,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "..\dist\win32\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\win32\archive.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\win32\libcrypto-1_1-x64.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\dist\win32\libcurl-x64.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\win32\libcurl-4.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\win32\libgcc_s_seh-1.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\win32\liblzma.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\win32\libstdc++-6.dll"; DestDir: "{app}"; Flags: ignoreversion

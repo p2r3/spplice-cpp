@@ -85,7 +85,7 @@ if (SPPLICE_TARGET_WINDOWS) # If building for Windows:
   target_link_libraries(SppliceCPP
     "archive.dll"
     "liblzma.dll"
-    "libcurl-x64.dll"
+    "libcurl-4.dll"
     "libwininet.a"
     "libws2_32.a"
   )

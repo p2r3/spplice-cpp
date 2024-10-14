@@ -61,12 +61,6 @@ bool ToolsCURL::downloadFile (const std::string &url, const std::filesystem::pat
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ofs);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
-#ifdef TARGET_WINDOWS
-  // TODO: Build CURL with Schannel on Windows
-  // This should *NOT* be here in the final release
-  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-#endif
-
   CURLcode response = curl_easy_perform(curl);
 
   // Clean up CURL
@@ -100,12 +94,6 @@ std::string ToolsCURL::downloadString (const std::string &url) {
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
-#ifdef TARGET_WINDOWS
-  // TODO: Build CURL with Schannel on Windows
-  // This should *NOT* be here in the final release
-  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-#endif
-
   // Perform the request
   CURLcode response = curl_easy_perform(curl);
 
@@ -135,12 +123,6 @@ CURL* ToolsCURL::wsConnect (const std::string &url) {
 
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 2L);
-
-#ifdef TARGET_WINDOWS
-  // TODO: Build CURL with Schannel on Windows
-  // This should *NOT* be here in the final release
-  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-#endif
 
   // Perform the request
   CURLcode response = curl_easy_perform(curl);

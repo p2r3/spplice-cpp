@@ -89,7 +89,7 @@ cd dist
 # Prepare the Windows binary for distribution.
 if [ "$target_windows" == true ] || [ "$target_both" == true ]; then
   # Copy project dependencies
-  cp ../deps/win32/lib/libcurl-x64.dll                             ./win32
+  cp ../deps/win32/lib/libcurl-4.dll                             ./win32
   cp ../deps/win32/lib/archive.dll                                 ./win32
   cp ../deps/win32/lib/liblzma.dll                                 ./win32
   cp ../deps/win32/lib/libcrypto-1_1-x64.dll                       ./win32

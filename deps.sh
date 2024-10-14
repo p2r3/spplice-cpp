@@ -2,6 +2,34 @@
 # On the Windows side, most of this is just unzipping and sorting pre-built binaries
 # On the Linux side, we're only compiling CURL and installing Debian packages
 
+if command -v apt > /dev/null; then
+
+  echo "Checking for necessary -dev packages..."
+  sudo apt install \
+    libarchive-dev \
+    libxml2-dev \
+    liblzma-dev \
+    libacl1-dev \
+    libgl1-mesa-dev \
+    libxcb*-dev \
+    libfontconfig1-dev \
+    libxkbcommon-x11-dev \
+    libnghttp2-dev \
+    libidn2-dev
+
+  echo "Checking for MinGW for cross-compilation..."
+  sudo apt install \
+    mingw-w64 \
+    mingw-w64-tools \
+    gcc-mingw-w64-x86-64 \
+    g++-mingw-w64-x86-64
+
+  echo "Switching to POSIX threads..."
+  sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+  sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+
+fi
+
 rm -rf ./deps
 mkdir deps
 cd deps
@@ -57,12 +85,14 @@ mkdir shared
     cd ..; rm -rf openssl
 
     mkdir curl; cd curl
-      wget https://curl.se/windows/dl-8.10.1_2/curl-8.10.1_2-win64-mingw.zip
-      unzip curl-8.10.1_2-win64-mingw.zip
-      mv curl-8.10.1_2-win64-mingw curl
-      mv ./curl/bin/*.exe ../bin
-      mv ./curl/bin/*.dll ../lib
-      mv ./curl/lib/* ../lib
+      wget https://curl.se/download/curl-8.10.1.zip
+      unzip curl-8.10.1.zip
+      mv curl-8.10.1 curl; cd curl
+        ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 --with-sysroot=/usr/x86_64-w64-mingw32 --enable-optimize --with-schannel --disable-dependency-tracking --disable-static --enable-shared --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-mqtt --disable-manual --disable-docs --disable-sspi --disable-aws --disable-ntlm --disable-unix-sockets --disable-socketpair --disable-dateparse --disable-progress-meter --enable-websockets --without-brotli --without-libssh2 --without-libssh --without-wolfssh --without-librtmp --without-libpsl
+        make
+        cd ..
+      mv ./curl/src/curl.exe ../bin
+      mv ./curl/lib/.libs/libcurl-4.dll ../lib
       mv ./curl/include/* ../include
     cd ..; rm -rf curl
 
@@ -79,7 +109,7 @@ mkdir shared
       wget https://curl.se/download/curl-8.10.1.zip
       unzip curl-8.10.1.zip
       mv curl-8.10.1 curl; cd curl
-        ./configure --enable-optimize --with-openssl --disable-dependency-tracking --disable-shared --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-mqtt --disable-manual --disable-docs --disable-sspi --disable-aws --disable-ntlm --disable-unix-sockets --disable-socketpair --disable-dateparse --disable-progress-meter --enable-websockets --without-brotli --without-libssh2 --without-libssh --without-wolfssh --without-librtmp
+        ./configure --enable-optimize --with-openssl --disable-dependency-tracking --disable-shared --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-mqtt --disable-manual --disable-docs --disable-sspi --disable-aws --disable-ntlm --disable-unix-sockets --disable-socketpair --disable-dateparse --disable-progress-meter --enable-websockets --without-brotli --without-libssh2 --without-libssh --without-wolfssh --without-librtmp --without-libpsl
         make
         cd ..
       mv ./curl/src/curl ../bin
@@ -88,32 +118,3 @@ mkdir shared
     cd ..; rm -rf curl
 
   cd ..
-
-  if command -v apt > /dev/null; then
-
-    echo "Checking for necessary -dev packages..."
-    sudo apt install \
-      libarchive-dev \
-      libxml2-dev \
-      liblzma-dev \
-      libacl1-dev \
-      libgl1-mesa-dev \
-      libxcb*-dev \
-      libfontconfig1-dev \
-      libxkbcommon-x11-dev \
-      libpsl-dev \
-      libnghttp2-dev \
-      libidn2-dev
-
-    echo "Checking for MinGW for cross-compilation..."
-    sudo apt install \
-      mingw-w64 \
-      mingw-w64-tools \
-      gcc-mingw-w64-x86-64 \
-      g++-mingw-w64-x86-64
-
-    echo "Switching to POSIX threads..."
-    sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
-    sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
-
-  fi
