@@ -89,7 +89,7 @@ cd dist
 # Prepare the Windows binary for distribution.
 if [ "$target_windows" == true ] || [ "$target_both" == true ]; then
   # Copy project dependencies
-  cp ../deps/win32/lib/libcurl-4.dll                             ./win32
+  cp ../deps/win32/lib/libcurl-4.dll                               ./win32
   cp ../deps/win32/lib/archive.dll                                 ./win32
   cp ../deps/win32/lib/liblzma.dll                                 ./win32
   cp ../deps/win32/lib/libcrypto-1_1-x64.dll                       ./win32
@@ -97,9 +97,10 @@ if [ "$target_windows" == true ] || [ "$target_both" == true ]; then
   cp ../qt5build/win32/bin/Qt5Core.dll                             ./win32
   cp ../qt5build/win32/bin/Qt5Gui.dll                              ./win32
   cp ../qt5build/win32/bin/Qt5Widgets.dll                          ./win32
-  # Copt Qt5 Windows platform library
-  mkdir ./win32/platforms;
-  cp ../qt5build/win32/plugins/platforms/qwindows.dll              ./win32/platforms
+  # Copy Qt5 plugins
+  mkdir ./win32/platforms
+  cp -r ../qt5build/win32/plugins/platforms/qwindows.dll           ./win32/platforms
+  cp -r ../qt5build/win32/plugins/imageformats                     ./win32
   # Copy C++ dependencies
   cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll               ./win32
   cp /usr/lib/gcc/x86_64-w64-mingw32/12-posix/libgcc_s_seh-1.dll   ./win32
