@@ -9,6 +9,7 @@
 #include <functional>
 // Main window dependencies
 #include <QApplication>
+#include <QCoreApplication>
 #include <QFontDatabase>
 #include <QThread>
 #include <QObject>
@@ -39,6 +40,9 @@ int main (int argc, char *argv[]) {
     std::cerr << "Failed to create temporary directory " << TEMP_DIR << ": " << e.what() << std::endl;
   }
 
+  qputenv("QT_FONT_DPI", QByteArray("96"));
+
+  QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);
 
   // Load the Quicksand fonts from resources
