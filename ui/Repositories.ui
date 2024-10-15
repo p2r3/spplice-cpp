@@ -121,7 +121,13 @@ QPushButton, QLineEdit, QComboBox {
       </spacer>
      </item>
      <item>
-      <widget class="QLineEdit" name="AddInput"/>
+      <widget class="QLineEdit" name="AddInput">
+       <property name="font">
+        <font>
+         <family>Quicksand Medium</family>
+        </font>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="AddButton">
@@ -185,10 +191,24 @@ QPushButton, QLineEdit, QComboBox {
       </spacer>
      </item>
      <item>
-      <widget class="QComboBox" name="RemoveDropdown"/>
+      <widget class="QComboBox" name="RemoveDropdown">
+       <property name="font">
+        <font>
+         <family>Quicksand Medium</family>
+        </font>
+       </property>
+       <property name="placeholderText">
+        <string>Select Repository</string>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="RemoveButton">
+       <property name="font">
+        <font>
+         <family>Quicksand Medium</family>
+        </font>
+       </property>
        <property name="text">
         <string>Remove</string>
        </property>
