@@ -26,7 +26,10 @@
 #include "package.h"
 
 // Constructs the PackageData instance from a JSON object
-ToolsPackage::PackageData::PackageData (QJsonObject package) {
+ToolsPackage::PackageData::PackageData (QJsonObject package, const std::string &repoURL) {
+
+  // Keep track of the repository which this package came from
+  this->repository = repoURL;
 
   // These properties should be available even in old repositories
   this->title = package["title"].toString().toStdString();
@@ -194,6 +197,9 @@ QWidget* ToolsPackage::createPackageItem (const ToolsPackage::PackageData *packa
   // Set the title and description
   itemUI.PackageTitle->setText(QString::fromStdString(package->title));
   itemUI.PackageDescription->setText(QString::fromStdString(package->description));
+
+  // Tag the item with the package's repository
+  item->setProperty("packageRepository", QString::fromStdString(package->repository));
 
   // Connect the install button
   QPushButton *installButton = itemUI.PackageInstallButton;

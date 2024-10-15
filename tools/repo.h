@@ -7,6 +7,9 @@
 class ToolsRepo {
   public:
     static std::vector<const ToolsPackage::PackageData*> fetchRepository (const std::string &url);
+    static void writeToFile (const std::string &url);
+    static std::vector<std::string> readFromFile ();
+    static void removeFromFile (const std::string &url);
 };
 
 #endif

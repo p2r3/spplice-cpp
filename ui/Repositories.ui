@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>480</width>
-    <height>160</height>
+    <height>240</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>New Repository</string>
+   <string>Manage Repositories</string>
   </property>
   <property name="styleSheet">
    <string notr="true">#RepoDialog {
@@ -20,10 +20,10 @@
 #DialogTitle {
 	color: #17C0E9;
 }
-#DialogText {
+QLabel {
 	color: #ffffff;
 }
-#RepoURL, #DialogButton {
+QPushButton, QLineEdit, QComboBox {
 	background: rgb(50, 50, 50);
 	color: #ffffff;
 	border: 2px solid rgb(80, 80, 80);
@@ -61,7 +61,7 @@
       </font>
      </property>
      <property name="text">
-      <string>New Repository</string>
+      <string>Manage Repositories</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -69,7 +69,20 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="DialogText">
+    <spacer name="InputSpacerT">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QLabel" name="AddText">
      <property name="font">
       <font>
        <family>Quicksand Medium</family>
@@ -84,15 +97,18 @@
      <property name="alignment">
       <set>Qt::AlignHCenter|Qt::AlignTop</set>
      </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="ButtonLayout">
-     <property name="topMargin">
-      <number>0</number>
+    <layout class="QHBoxLayout" name="AddLayout">
+     <property name="bottomMargin">
+      <number>15</number>
      </property>
      <item>
-      <spacer name="SpacerR">
+      <spacer name="AddSpacerL">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -105,17 +121,17 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLineEdit" name="RepoURL"/>
+      <widget class="QLineEdit" name="AddInput"/>
      </item>
      <item>
-      <widget class="QPushButton" name="DialogButton">
+      <widget class="QPushButton" name="AddButton">
        <property name="font">
         <font>
          <family>Quicksand Medium</family>
         </font>
        </property>
        <property name="text">
-        <string>OK</string>
+        <string>Add</string>
        </property>
        <property name="flat">
         <bool>true</bool>
@@ -123,7 +139,7 @@
       </widget>
      </item>
      <item>
-      <spacer name="SpacerL">
+      <spacer name="AddSpacerR">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -136,6 +152,75 @@
       </spacer>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="RemoveText">
+     <property name="font">
+      <font>
+       <family>Quicksand Medium</family>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Remove repositories using the dropdown below.</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="RemoveLayout">
+     <item>
+      <spacer name="RemoveSpacerL">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QComboBox" name="RemoveDropdown"/>
+     </item>
+     <item>
+      <widget class="QPushButton" name="RemoveButton">
+       <property name="text">
+        <string>Remove</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="RemoveSpacerR">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <spacer name="InputSpacerB">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>

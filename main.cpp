@@ -2,7 +2,6 @@
 #include <iostream>
 #include <utility>
 #include <vector>
-#include <deque>
 #include <filesystem>
 #include <thread>
 #include <chrono>
@@ -15,7 +14,7 @@
 #include <QObject>
 #include <QDialog>
 #include "ui/mainwindow.h"
-#include "ui/addrepository.h"
+#include "ui/repositories.h"
 
 // Project globals
 #include "globals.h"
@@ -27,13 +26,10 @@
 #include "tools/package.h"
 #include "tools/repo.h"
 
-std::deque<std::string> repositoryURLs = {
-  "https://p2r3.github.io/spplice-repo/index.json"
-};
+// Fetch and display packages from the given repository URL
+void displayRepository (const std::string &url, QVBoxLayout *container) {
 
-void addRepository (const std::string url, QVBoxLayout *container) {
-
-  // Fetch the repository packages
+  // Fetch the repository packages // TODO: Make this asynchronous
   std::vector<const ToolsPackage::PackageData*> repository = ToolsRepo::fetchRepository(url);
 
   // Keep track of added package count to order them properly
@@ -51,12 +47,32 @@ void addRepository (const std::string url, QVBoxLayout *container) {
 
 }
 
+// Remove all packages of the given repository URL from the list
+void hideRepository (const std::string &url, QVBoxLayout *container) {
+
+  for (int i = 0; i < container->count(); i ++) {
+    QWidget *child = container->itemAt(i)->widget();
+    if (child->property("packageRepository").toString().toStdString() == url) {
+      container->removeWidget(child);
+      delete child;
+      i --;
+    }
+  }
+
+}
+
 int main (int argc, char *argv[]) {
 
-  try {
+  try { // Ensure TEMP_DIR exists
     std::filesystem::create_directories(TEMP_DIR);
   } catch (const std::filesystem::filesystem_error& e) {
     std::cerr << "Failed to create temporary directory " << TEMP_DIR << ": " << e.what() << std::endl;
+  }
+
+  try { // Ensure APP_DIR exists
+    std::filesystem::create_directories(APP_DIR);
+  } catch (const std::filesystem::filesystem_error& e) {
+    std::cerr << "Failed to create application directory " << APP_DIR << ": " << e.what() << std::endl;
   }
 
   qputenv("QT_FONT_DPI", QByteArray("96"));
@@ -82,22 +98,37 @@ int main (int argc, char *argv[]) {
   // Connect the "Add Repository" button
   QObject::connect(windowUI.TitleButtonR, &QPushButton::clicked, [packageContainer]() {
 
-    // Create new repository entry dialog
+    // Create repository management dialog
     QDialog *dialog = new QDialog;
     Ui::RepoDialog dialogUI;
     dialogUI.setupUi(dialog);
 
-    QLineEdit *urlTextBox = dialogUI.RepoURL;
+    QLineEdit *urlInput = dialogUI.AddInput;
+    QComboBox *dropdown = dialogUI.RemoveDropdown;
 
-    // Connect the "OK" button
-    QObject::connect(dialogUI.DialogButton, &QPushButton::clicked, [packageContainer, urlTextBox, dialog]() {
-      addRepository(urlTextBox->text().toStdString(), packageContainer);
+    // List external repositories in dropdown
+    std::vector<std::string> repositories = ToolsRepo::readFromFile();
+    for (const std::string &url : repositories) {
+      dropdown->addItem(QString::fromStdString(url));
+    }
+
+    // Define URL submit behavior
+    auto submitURL = [packageContainer, urlInput, dialog]() {
+      const std::string url = urlInput->text().toStdString();
+      displayRepository(url, packageContainer);
+      ToolsRepo::writeToFile(url);
       dialog->hide();
-    });
+    };
 
-    // Connect the event of pressing return
-    QObject::connect(urlTextBox, &QLineEdit::returnPressed, [packageContainer, urlTextBox, dialog]() {
-      addRepository(urlTextBox->text().toStdString(), packageContainer);
+    // Connect the "Add" button and text input return event
+    QObject::connect(dialogUI.AddButton, &QPushButton::clicked, submitURL);
+    QObject::connect(urlInput, &QLineEdit::returnPressed, submitURL);
+
+    // Connect the "Remove" button
+    QObject::connect(dialogUI.RemoveButton, &QPushButton::clicked, [packageContainer, dropdown, dialog]() {
+      const std::string url = dropdown->currentText().toStdString();
+      hideRepository(url, packageContainer);
+      ToolsRepo::removeFromFile(url);
       dialog->hide();
     });
 
@@ -105,17 +136,21 @@ int main (int argc, char *argv[]) {
 
   });
 
-  // Fetch packages from each repository
-  for (const std::string &url : repositoryURLs) {
-    addRepository(url, packageContainer);
+  // Display the main application window
+  window.setWindowTitle("Spplice");
+  window.show();
+
+  // Load the global repository
+  displayRepository("https://p2r3.github.io/spplice-repo/index.json", packageContainer);
+
+  // Load additional repositories from file
+  std::vector<std::string> repositories = ToolsRepo::readFromFile();
+  for (const std::string &url : repositories) {
+    displayRepository(url, packageContainer);
   }
 
   // Clean up CURL on program termination
   std::atexit(ToolsCURL::cleanup);
-
-  // Display the main application window
-  window.setWindowTitle("Spplice");
-  window.show();
 
   // Ensure that no package is installed if Portal 2 is running when exiting Spplice
 #ifndef TARGET_WINDOWS

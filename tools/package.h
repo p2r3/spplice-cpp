@@ -19,8 +19,9 @@ class ToolsPackage {
       std::vector<std::string> args;
       std::string file;
       std::string icon;
+      std::string repository;
 
-      PackageData (QJsonObject package);
+      PackageData (QJsonObject package, const std::string &url);
 
     };
 
