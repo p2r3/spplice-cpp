@@ -27,7 +27,8 @@ std::vector<const ToolsPackage::PackageData*> ToolsRepo::fetchRepository (const 
   // Create a vector, since a dynamic array is a bit more of a pain in the ass
   std::vector<const ToolsPackage::PackageData*> repository;
   for (int i = 0; i < packageCount; i ++) {
-    repository.push_back(new ToolsPackage::PackageData(packages[i].toObject()));
+    ToolsPackage::PackageData *package = new ToolsPackage::PackageData(packages[i].toObject());
+    repository.push_back(package);
   }
 
   return repository;

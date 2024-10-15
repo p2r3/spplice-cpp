@@ -6,10 +6,10 @@
 #include <QPixmap>
 #include <QJsonObject>
 
-// The structure of a package's properties
 class ToolsPackage {
   public:
 
+    // The structure of a package's properties
     struct PackageData {
 
       std::string title;
@@ -23,6 +23,8 @@ class ToolsPackage {
       PackageData (QJsonObject package);
 
     };
+
+    static QWidget* createPackageItem (const PackageData* package);
 
 };
 

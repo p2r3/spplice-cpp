@@ -41,6 +41,20 @@
 
 QPushButton {
 	outline: none;
+	border: none;
+}
+
+#TitleButtonL {
+	border-image: url(&quot;:/resources/settings.png&quot;) 0 0 0 0 stretch stretch;
+}
+#TitleButtonR {
+	border-image: url(&quot;:/resources/add.png&quot;) 0 0 0 0 stretch stretch;
+}
+#TitleButtonL::hover {
+
+}
+#TitleButtonR::hover {
+
 }
 
 QScrollBar:vertical {
@@ -80,51 +94,130 @@ QScrollBar::sub-line:vertical {
 }</string>
   </property>
   <widget class="QWidget" name="CentralWidget">
-   <layout class="QGridLayout" name="gridLayout">
-    <property name="topMargin">
-     <number>30</number>
-    </property>
-    <property name="bottomMargin">
-     <number>0</number>
-    </property>
-    <item row="0" column="1" colspan="3">
-     <widget class="QLabel" name="MenuTitle">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <layout class="QHBoxLayout" name="TitleLayout">
+      <property name="leftMargin">
+       <number>20</number>
       </property>
-      <property name="font">
-       <font>
-        <family>Quicksand Medium</family>
-        <pointsize>30</pointsize>
-        <weight>50</weight>
-        <bold>false</bold>
-       </font>
+      <property name="topMargin">
+       <number>20</number>
       </property>
-      <property name="text">
-       <string>Spplice packages</string>
+      <property name="rightMargin">
+       <number>20</number>
       </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
+      <property name="bottomMargin">
+       <number>40</number>
       </property>
-     </widget>
+      <item>
+       <widget class="QPushButton" name="TitleButtonL">
+        <property name="minimumSize">
+         <size>
+          <width>48</width>
+          <height>48</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>48</width>
+          <height>48</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="TitleSpacerL">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>309</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="MenuTitle">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="font">
+         <font>
+          <family>Quicksand Medium</family>
+          <pointsize>30</pointsize>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Spplice packages</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="TitleSpacerR">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>309</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="TitleButtonR">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>48</width>
+          <height>48</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>48</width>
+          <height>48</height>
+         </size>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
-    <item row="0" column="0">
-     <spacer name="TitleSpacerL">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>309</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="2" column="0" colspan="5">
+    <item>
      <widget class="QScrollArea" name="PackageList">
       <property name="styleSheet">
        <string notr="true"/>
@@ -147,7 +240,7 @@ QScrollBar::sub-line:vertical {
          <x>0</x>
          <y>0</y>
          <width>982</width>
-         <height>518</height>
+         <height>516</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -165,38 +258,11 @@ QScrollBar::sub-line:vertical {
       </widget>
      </widget>
     </item>
-    <item row="0" column="4">
-     <spacer name="TitleSpacerR">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>309</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="1" column="2">
-     <spacer name="TitlteSpacerB">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
    </layout>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

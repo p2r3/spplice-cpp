@@ -3,5 +3,7 @@
     <file>fonts/Quicksand-Light.ttf</file>
     <file>fonts/Quicksand-Regular.ttf</file>
     <file>fonts/Quicksand-Medium.ttf</file>
+    <file>resources/settings.png</file>
+    <file>resources/add.png</file>
   </qresource>
 </RCC>

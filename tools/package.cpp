@@ -6,9 +6,16 @@
 #include <string>
 #include <functional>
 #include <QPixmap>
+#include <QWidget>
+#include <QThread>
+#include <QObject>
+#include <QDialog>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonValue>
+
+#include "../ui/packageitem.h"
+#include "../ui/packageinfo.h"
 
 #include "../globals.h"
 #include "curl.h" // ToolsCURL
@@ -20,16 +27,27 @@
 
 // Constructs the PackageData instance from a JSON object
 ToolsPackage::PackageData::PackageData (QJsonObject package) {
+
+  // These properties should be available even in old repositories
   this->title = package["title"].toString().toStdString();
   this->author = package["author"].toString().toStdString();
   this->description = package["description"].toString().toStdString();
-  this->version = package["version"].toString().toStdString();
   this->file = package["file"].toString().toStdString();
   this->icon = package["icon"].toString().toStdString();
-  QJsonArray args = package["args"].toArray();
-  for (const QJsonValue &arg : args) {
-    this->args.push_back(arg.toString().toStdString());
+
+  // The version and args properties were introduced in version 3
+  // Use a placeholder for version if not provided
+  if (package.contains("version")) this->version = "1.0.0";
+  else this->version = package["version"].toString().toStdString();
+
+  // Leave args blank if not provided
+  if (package.contains("args")) {
+    QJsonArray args = package["args"].toArray();
+    for (const QJsonValue &arg : args) {
+      this->args.push_back(arg.toString().toStdString());
+    }
   }
+
 }
 
 // Checks if the given file exists and is up-to-date
@@ -127,7 +145,7 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
 #ifndef TARGET_WINDOWS
   std::pair<bool, std::string> installationResult = ToolsInstall::installPackageFile(filePath, package->args);
 #else
-  std::pair<bool, std::wstring> installationResult = ToolsInstall::installPackageFile(filePath, package->args);
+  std::pair<bool, std::wstring> installationResult = ToolsInstall::installPackageFile(filePath, package.args);
 #endif
 
   // If installation failed, display error and exit early
@@ -163,5 +181,108 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
 
   SPPLICE_INSTALL_STATE = 0;
   emit installStateUpdate();
+
+}
+
+QWidget* ToolsPackage::createPackageItem (const ToolsPackage::PackageData *package) {
+
+  // Create the package item widget
+  QWidget *item = new QWidget;
+  Ui::PackageItem itemUI;
+  itemUI.setupUi(item);
+
+  // Set the title and description
+  itemUI.PackageTitle->setText(QString::fromStdString(package->title));
+  itemUI.PackageDescription->setText(QString::fromStdString(package->description));
+
+  // Connect the install button
+  QPushButton *installButton = itemUI.PackageInstallButton;
+  QObject::connect(installButton, &QPushButton::clicked, [installButton, package]() {
+
+    // Create a thread for asynchronous installation
+    PackageItemWorker *worker = new PackageItemWorker;
+    QThread *workerThread = new QThread;
+    worker->moveToThread(workerThread);
+
+    // Connect the task of installing the package to the worker
+    QObject::connect(workerThread, &QThread::started, worker, [worker, package]() {
+      QMetaObject::invokeMethod(worker, "installPackage", Q_ARG(const ToolsPackage::PackageData*, package));
+    });
+
+    // Update the button text based on the installation state
+    QObject::connect(worker, &PackageItemWorker::installStateUpdate, installButton, [installButton]() {
+      switch (SPPLICE_INSTALL_STATE) {
+        case 0:
+          installButton->setText("Install");
+          installButton->setStyleSheet("");
+          break;
+        case 1:
+          installButton->setText("Installing...");
+          installButton->setStyleSheet("color: #faa81a;");
+          break;
+        case 2:
+          installButton->setText("Installed");
+          installButton->setStyleSheet("color: #faa81a;");
+          break;
+      }
+    });
+
+    // Clean up the thread once it's done
+    QObject::connect(worker, &PackageItemWorker::packageIconReady, workerThread, &QThread::quit);
+    QObject::connect(worker, &PackageItemWorker::packageIconReady, worker, &PackageItemWorker::deleteLater);
+    QObject::connect(workerThread, &QThread::finished, workerThread, &QThread::deleteLater);
+
+    // Start the worker thread
+    workerThread->start();
+
+  });
+
+  // Start a new worker thread for asynchronous icon fetching
+  PackageItemWorker *worker = new PackageItemWorker;
+  QThread *workerThread = new QThread;
+  worker->moveToThread(workerThread);
+
+  // Connect the task of fetching the icon to the worker
+  QSize iconSize = itemUI.PackageIcon->size();
+  QObject::connect(workerThread, &QThread::started, worker, [worker, package, iconSize]() {
+    QMetaObject::invokeMethod(worker, "getPackageIcon", Q_ARG(const ToolsPackage::PackageData*, package), Q_ARG(QSize, iconSize));
+  });
+  QObject::connect(worker, &PackageItemWorker::packageIconResult, itemUI.PackageIcon, &QLabel::setPixmap);
+
+  // Clean up the thread once it's done
+  QObject::connect(worker, &PackageItemWorker::packageIconReady, workerThread, &QThread::quit);
+  QObject::connect(worker, &PackageItemWorker::packageIconReady, worker, &PackageItemWorker::deleteLater);
+  QObject::connect(workerThread, &QThread::finished, workerThread, &QThread::deleteLater);
+
+  // Start the worker thread
+  workerThread->start();
+
+  // Connect the "Read more" button
+  QObject::connect(itemUI.PackageInfoButton, &QPushButton::clicked, [package]() {
+
+    QDialog *dialog = new QDialog;
+    Ui::PackageInfo dialogUI;
+    dialogUI.setupUi(dialog);
+
+    // Set text data (title, author, description)
+    dialogUI.PackageTitle->setText(QString::fromStdString(package->title));
+    dialogUI.PackageAuthor->setText(QString::fromStdString("By " + package->author));
+    dialogUI.PackageDescription->setText(QString::fromStdString(package->description));
+
+    // Set the icon - assume the image has already been downloaded
+    size_t imageURLHash = std::hash<std::string>{}(package->icon);
+    std::filesystem::path imagePath = TEMP_DIR / std::to_string(imageURLHash);
+
+    QSize iconSize = dialogUI.PackageIcon->size();
+    QPixmap iconPixmap = ToolsQT::getPixmapFromPath(imagePath, iconSize);
+    QPixmap iconRoundedPixmap = ToolsQT::getRoundedPixmap(iconPixmap, 10);
+    dialogUI.PackageIcon->setPixmap(iconRoundedPixmap);
+
+    dialog->setWindowTitle(QString::fromStdString("Details for " + package->title));
+    dialog->exec();
+
+  });
+
+  return item;
 
 }
