@@ -145,7 +145,7 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
 #ifndef TARGET_WINDOWS
   std::pair<bool, std::string> installationResult = ToolsInstall::installPackageFile(filePath, package->args);
 #else
-  std::pair<bool, std::wstring> installationResult = ToolsInstall::installPackageFile(filePath, package.args);
+  std::pair<bool, std::wstring> installationResult = ToolsInstall::installPackageFile(filePath, package->args);
 #endif
 
   // If installation failed, display error and exit early
