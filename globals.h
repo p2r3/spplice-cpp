@@ -8,6 +8,6 @@
 
 extern const std::filesystem::path TEMP_DIR;
 extern int SPPLICE_INSTALL_STATE;
-extern int SPPLICE_NETCON_PORT;
+extern const int SPPLICE_NETCON_PORT;
 
 #endif
