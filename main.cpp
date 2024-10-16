@@ -75,9 +75,10 @@ int main (int argc, char *argv[]) {
     std::cerr << "Failed to create application directory " << APP_DIR << ": " << e.what() << std::endl;
   }
 
-  qputenv("QT_FONT_DPI", QByteArray("96"));
+  // Set up high-DPI scaling
+  QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 
-  QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);
 
   // Load the Quicksand fonts from resources
