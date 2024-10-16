@@ -68,7 +68,7 @@ QComboBox::down-arrow {
       </font>
      </property>
      <property name="text">
-      <string>Manage Repositories</string>
+      <string>Manage repositories</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
