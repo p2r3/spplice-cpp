@@ -1,7 +1,7 @@
 #include <filesystem>
 #include "globals.h"
 
-// Points to the system-specific designated cache path
+// Points to the system-specific designated cache directory
 #ifndef TARGET_WINDOWS
 const std::filesystem::path CACHE_DIR = (std::filesystem::path(std::getenv("HOME")) / ".cache") / "spplice-cpp";
 #else
