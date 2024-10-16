@@ -95,7 +95,7 @@ void PackageItemWorker::getPackageIcon (const ToolsPackage::PackageData *package
 
   // Generate a hash from the icon URL to use as a file name
   size_t imageURLHash = std::hash<std::string>{}(package->icon);
-  std::filesystem::path imagePath = TEMP_DIR / std::to_string(imageURLHash);
+  std::filesystem::path imagePath = CACHE_DIR / std::to_string(imageURLHash);
 
   // Check if we have a valid icon cache
   if (!validateFileVersion(imagePath, package->version)) {
@@ -129,7 +129,7 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
 
   // Generate a hash from the file's URL to use as a file name
   size_t fileURLHash = std::hash<std::string>{}(package->file);
-  const std::filesystem::path filePath = TEMP_DIR / std::to_string(fileURLHash);
+  const std::filesystem::path filePath = CACHE_DIR / std::to_string(fileURLHash);
 
   // Download the package file if we don't have a valid cache
   if (validateFileVersion(filePath, package->version)) {
@@ -277,7 +277,7 @@ QWidget* ToolsPackage::createPackageItem (const ToolsPackage::PackageData *packa
 
     // Set the icon - assume the image has already been downloaded
     size_t imageURLHash = std::hash<std::string>{}(package->icon);
-    std::filesystem::path imagePath = TEMP_DIR / std::to_string(imageURLHash);
+    std::filesystem::path imagePath = CACHE_DIR / std::to_string(imageURLHash);
 
     QSize iconSize = dialogUI.PackageIcon->size();
     QPixmap iconPixmap = ToolsQT::getPixmapFromPath(imagePath, iconSize);

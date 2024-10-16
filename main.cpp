@@ -63,10 +63,10 @@ void hideRepository (const std::string &url, QVBoxLayout *container) {
 
 int main (int argc, char *argv[]) {
 
-  try { // Ensure TEMP_DIR exists
-    std::filesystem::create_directories(TEMP_DIR);
+  try { // Ensure CACHE_DIR exists
+    std::filesystem::create_directories(CACHE_DIR);
   } catch (const std::filesystem::filesystem_error& e) {
-    std::cerr << "Failed to create temporary directory " << TEMP_DIR << ": " << e.what() << std::endl;
+    std::cerr << "Failed to create temporary directory " << CACHE_DIR << ": " << e.what() << std::endl;
   }
 
   try { // Ensure APP_DIR exists

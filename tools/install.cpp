@@ -472,7 +472,7 @@ bool isDirectoryLink (const std::filesystem::path linkName) {
 }
 #endif
 
-// Installs the package located at the temporary directory (TEMP_DIR/current_package)
+// Installs the package located at the temporary directory (CACHE_DIR/current_package)
 #ifndef TARGET_WINDOWS
 std::pair<bool, std::string> ToolsInstall::installPackageFile (const std::filesystem::path packageFile, const std::vector<std::string> args)
 #else
@@ -481,7 +481,7 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
 {
 
   // Extract the package to a temporary directory
-  const std::filesystem::path tmpPackageDirectory = TEMP_DIR / "tempcontent";
+  const std::filesystem::path tmpPackageDirectory = CACHE_DIR / "tempcontent";
   if (std::filesystem::exists(tmpPackageDirectory)) {
     std::filesystem::remove_all(tmpPackageDirectory);
   }
@@ -587,7 +587,7 @@ void ToolsInstall::Uninstall (const std::wstring &gamePath)
   unlinkDirectory(tempcontentPath);
 
   // Remove the actual package directory containing all package files
-  const std::filesystem::path tmpPackageDirectory = TEMP_DIR / "tempcontent";
+  const std::filesystem::path tmpPackageDirectory = CACHE_DIR / "tempcontent";
   std::filesystem::remove_all(tmpPackageDirectory);
 
 }
