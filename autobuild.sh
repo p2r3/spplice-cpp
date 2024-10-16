@@ -30,6 +30,7 @@ cd ui
 ../qt5build/linux/bin/uic -o errordialog.h ErrorDialog.ui
 ../qt5build/linux/bin/uic -o packageinfo.h PackageInfo.ui
 ../qt5build/linux/bin/uic -o repositories.h Repositories.ui
+../qt5build/linux/bin/uic -o settings.h Settings.ui
 cd ..
 
 # Build application dependencies if not present

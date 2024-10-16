@@ -3,10 +3,11 @@
 
 // Points to the system-specific designated cache directory
 #ifndef TARGET_WINDOWS
-const std::filesystem::path CACHE_DIR = (std::filesystem::path(std::getenv("HOME")) / ".cache") / "spplice-cpp";
+std::filesystem::path CACHE_DIR = (std::filesystem::path(std::getenv("HOME")) / ".cache") / "spplice-cpp";
 #else
-const std::filesystem::path CACHE_DIR = std::filesystem::temp_directory_path() / "spplice-cpp";
+std::filesystem::path CACHE_DIR = std::filesystem::temp_directory_path() / "spplice-cpp";
 #endif
+bool CACHE_ENABLE = true;
 
 // Points to the system-specific designated application directory
 #ifndef TARGET_WINDOWS

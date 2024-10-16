@@ -380,12 +380,12 @@ bool linkDirectory (const std::filesystem::path target, const std::filesystem::p
 }
 #endif
 
-// Creates a hard link for a file on both Linux and Windows
+// Creates a symbolic link for a file on Linux and a hard link on Windows
 #ifndef TARGET_WINDOWS
 bool linkFile (const std::filesystem::path target, const std::filesystem::path linkName) {
 
-  if (link(target.c_str(), linkName.c_str()) != 0) {
-    std::cerr << "Failed to create hard link " << target << " -> " << linkName << std::endl;
+  if (symlink(target.c_str(), linkName.c_str()) != 0) {
+    std::cerr << "Failed to create symbolic link " << target << " -> " << linkName << std::endl;
     return false;
   }
   return true;
@@ -489,9 +489,9 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
 
   if (!extractLocalFile(packageFile, tmpPackageDirectory)) {
 #ifndef TARGET_WINDOWS
-    return std::pair<bool, std::string> (false, "Failed to extract package.");
+    return std::pair<bool, std::string> (false, "Failed to extract package. Please clear the cache and try again.");
 #else
-    return std::pair<bool, std::wstring> (false, L"Failed to extract package.");
+    return std::pair<bool, std::wstring> (false, L"Failed to extract package. Please clear the cache and try again.");
 #endif
   }
 
@@ -501,6 +501,7 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
 
   // Start Portal 2
   if (!startPortal2(args)) {
+    std::filesystem::remove_all(tmpPackageDirectory);
 #ifndef TARGET_WINDOWS
     return std::pair<bool, std::string> (false, "Failed to start Portal 2. Is Steam running?");
 #else
@@ -547,6 +548,7 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
 
   // Link the extracted package files to the destination tempcontent directory
   if (!linkDirectory(tmpPackageDirectory, tempcontentPath)) {
+    std::filesystem::remove_all(tmpPackageDirectory);
 #ifndef TARGET_WINDOWS
     return std::pair<bool, std::string> (false, "Failed to link package files to portal2_tempcontent.");
 #else
@@ -554,8 +556,14 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
 #endif
   }
 
+  const std::filesystem::path soundcacheSourcePath = gamePath / "portal2" / "maps" / "soundcache" / "_master.cache";
+  const std::filesystem::path soundcacheDestPath = tempcontentPath / "maps" / "soundcache" / "_master.cache";
+
   // Link the soundcache from base Portal 2 to skip waiting for it to generate
-  linkFile(gamePath / "portal2" / "maps" / "soundcache" / "_master.cache", tempcontentPath / "maps" / "soundcache" / "_master.cache");
+  if (!linkFile(soundcacheSourcePath, soundcacheDestPath)) {
+    // If linking the soundcache failed, copy it instead
+    std::filesystem::copy_file(soundcacheSourcePath, soundcacheDestPath);
+  }
 
   // Run the JavaScript entrypoint (if one exists) on a detached thread
   const std::filesystem::path jsEntryPoint = tmpPackageDirectory / "main.js";

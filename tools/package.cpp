@@ -132,10 +132,10 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
   const std::filesystem::path filePath = CACHE_DIR / std::to_string(fileURLHash);
 
   // Download the package file if we don't have a valid cache
-  if (validateFileVersion(filePath, package->version)) {
+  if (CACHE_ENABLE && validateFileVersion(filePath, package->version)) {
     std::cout << "Cached package found, skipping download" << std::endl;
   } else {
-    if (!updateFileVersion(filePath, package->version)) {
+    if (CACHE_ENABLE && !updateFileVersion(filePath, package->version)) {
       std::cout << "Couldn't open package version file for writing" << std::endl;
     }
     if (!ToolsCURL::downloadFile(package->file, filePath)) {
@@ -151,6 +151,9 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
   std::pair<bool, std::wstring> installationResult = ToolsInstall::installPackageFile(filePath, package->args);
 #endif
 
+  // Remove downloaded archive post-installation if caching is disabled
+  if (!CACHE_ENABLE) std::filesystem::remove(filePath);
+
   // If installation failed, display error and exit early
   if (installationResult.first == false) {
 #ifndef TARGET_WINDOWS
@@ -161,8 +164,6 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
 
     SPPLICE_INSTALL_STATE = 0;
     emit installStateUpdate();
-
-    std::filesystem::remove(filePath);
 
     return;
   }

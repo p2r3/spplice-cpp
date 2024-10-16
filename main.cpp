@@ -1,5 +1,6 @@
 // Standard libraries
 #include <iostream>
+#include <fstream>
 #include <utility>
 #include <vector>
 #include <filesystem>
@@ -13,8 +14,10 @@
 #include <QFontDatabase>
 #include <QObject>
 #include <QDialog>
+#include <QMessageBox>
 #include "ui/mainwindow.h"
 #include "ui/repositories.h"
+#include "ui/settings.h"
 
 // Project globals
 #include "globals.h"
@@ -61,7 +64,37 @@ void hideRepository (const std::string &url, QVBoxLayout *container) {
 
 }
 
+// Check if a custom cache directory has been specified
+void checkCacheOverride (const std::filesystem::path &configPath) {
+
+  if (!std::filesystem::exists(configPath)) return;
+
+  std::ifstream configFile(configPath);
+  if (!configFile.is_open()) {
+    std::cerr << "Failed to open " << configPath << " for reading." << std::endl;
+    return;
+  }
+
+  std::string customCacheDir;
+  std::getline(configFile, customCacheDir);
+  configFile.close();
+
+  if (!std::filesystem::exists(customCacheDir)) {
+    std::cerr << "Invalid cache directory " << customCacheDir << "." << std::endl;
+    return;
+  }
+
+  CACHE_DIR = std::filesystem::path(customCacheDir);
+
+}
+
 int main (int argc, char *argv[]) {
+
+  // Check for a CACHE_DIR override in cache_dir.txt
+  checkCacheOverride(APP_DIR / "cache_dir.txt");
+
+  // Check if caching has been disabled
+  CACHE_ENABLE = !std::filesystem::exists(APP_DIR / "disable_cache");
 
   try { // Ensure CACHE_DIR exists
     std::filesystem::create_directories(CACHE_DIR);
@@ -95,6 +128,91 @@ int main (int argc, char *argv[]) {
   ToolsCURL::init();
 
   QVBoxLayout *packageContainer = windowUI.PackageListLayout;
+
+  // Connect the "Settings" button
+  QObject::connect(windowUI.TitleButtonL, &QPushButton::clicked, [packageContainer]() {
+
+    // Create settings dialog
+    QDialog *dialog = new QDialog;
+    Ui::SettingsDialog dialogUI;
+    dialogUI.setupUi(dialog);
+
+    // Set the text of the cache toggle button
+    dialogUI.CacheToggleBtn->setText(CACHE_ENABLE ? "Disable cache" : "Enable cache");
+
+    // Connect the "Clear cache" button
+    QObject::connect(dialogUI.CacheClearBtn, &QPushButton::clicked, []() {
+      std::filesystem::remove_all(CACHE_DIR);
+      std::filesystem::create_directories(CACHE_DIR);
+      QMessageBox::information(nullptr, "Cache Cleared", "Cache has been cleared successfully.");
+    });
+
+    QPushButton *cacheToggle = dialogUI.CacheToggleBtn;
+
+    // Connect the cache toggle button
+    QObject::connect(cacheToggle, &QPushButton::clicked, [cacheToggle]() {
+
+      // Toggle the caching behavior
+      CACHE_ENABLE = !CACHE_ENABLE;
+
+      // Save the cache state to file
+      if (!CACHE_ENABLE) {
+        std::ofstream disableCacheFile(APP_DIR / "disable_cache");
+        if (!disableCacheFile.is_open()) {
+          std::cerr << "Failed to create disable_cache file." << std::endl;
+        }
+      } else {
+        std::filesystem::remove(APP_DIR / "disable_cache");
+      }
+
+      cacheToggle->setText(CACHE_ENABLE ? "Disable cache" : "Enable cache");
+      QMessageBox::information(nullptr, "Cache Toggled", CACHE_ENABLE ? "Cache has been enabled." : "Cache has been disabled.");
+
+    });
+
+    QLineEdit *cacheInput = dialogUI.CacheDirInput;
+
+    // Write the cache directory to the input field
+#ifndef TARGET_WINDOWS
+    cacheInput->setText(QString::fromStdString(CACHE_DIR.string()));
+#else
+    cacheInput->setText(QString::fromStdWString(CACHE_DIR.wstring()));
+#endif
+
+    // Connect the cache directory "Apply" button
+    QObject::connect(dialogUI.CacheDirBtn, &QPushButton::clicked, [cacheInput]() {
+
+#ifndef TARGET_WINDOWS
+      const std::filesystem::path newPath(cacheInput->text().toStdString());
+#else
+      const std::filesystem::path newPath(cacheInput->text().toStdWString());
+#endif
+
+      if (newPath == CACHE_DIR) return;
+      CACHE_DIR = newPath;
+
+      try { // Ensure the new directory is a valid path
+        std::filesystem::create_directories(newPath);
+      } catch (const std::filesystem::filesystem_error& e) {
+        QMessageBox::critical(nullptr, "Cache Directory Error", "Failed to create cache directory: " + QString::fromStdString(e.what()));
+        return;
+      }
+
+      // Write the new cache directory to the config file
+      std::ofstream configFile(APP_DIR / "cache_dir.txt");
+      if (!configFile.is_open()) {
+        std::cerr << "Failed to open cache config file for writing." << std::endl;
+      } else {
+        configFile << CACHE_DIR.string();
+      }
+
+      QMessageBox::information(nullptr, "Cache Directory Updated", "The cache directory has been updated successfully.");
+
+    });
+
+    dialog->exec();
+
+  });
 
   // Connect the "Add Repository" button
   QObject::connect(windowUI.TitleButtonR, &QPushButton::clicked, [packageContainer]() {
