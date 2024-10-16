@@ -24,11 +24,18 @@ QLabel {
 	color: #ffffff;
 }
 QPushButton, QLineEdit, QComboBox {
-	background: rgb(50, 50, 50);
+	background-color: #323232;
 	color: #ffffff;
-	border: 2px solid rgb(80, 80, 80);
+	border: 2px solid #505050;
 	padding: 4px 20px;
 	border-radius: 5px;
+}
+QComboBox::drop-down {
+	border: none;
+}
+QComboBox::down-arrow {
+    image: url(&quot;:/resources/down-arrow.png&quot;);
+    width: 10px;
 }</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -244,6 +251,8 @@ QPushButton, QLineEdit, QComboBox {
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
