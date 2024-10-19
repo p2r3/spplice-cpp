@@ -210,7 +210,7 @@ int main (int argc, char *argv[]) {
 
     });
 
-    dialog->exec();
+    dialog->open();
 
   });
 
@@ -251,7 +251,7 @@ int main (int argc, char *argv[]) {
       dialog->hide();
     });
 
-    dialog->exec();
+    dialog->open();
 
   });
 

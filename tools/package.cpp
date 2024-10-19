@@ -286,7 +286,7 @@ QWidget* ToolsPackage::createPackageItem (const ToolsPackage::PackageData *packa
     dialogUI.PackageIcon->setPixmap(iconRoundedPixmap);
 
     dialog->setWindowTitle(QString::fromStdString("Details for " + package->title));
-    dialog->exec();
+    dialog->open();
 
   });
 

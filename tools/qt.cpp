@@ -62,6 +62,6 @@ void ToolsQT::displayErrorPopup (const std::string title, const std::string mess
 
   dialogUI.ErrorTitle->setText(QString::fromStdString(title));
   dialogUI.ErrorText->setText(QString::fromStdString(message));
-  dialog->exec();
+  dialog->open();
 
 }
