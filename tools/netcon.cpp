@@ -107,8 +107,10 @@ std::string ToolsNetCon::readConsole (int sockfd, size_t size) {
   // Handle the poll result
   if (result == SOCKET_ERROR) {
     std::cerr << "Failed to receive data from telnet server." << std::endl;
-    return "";
+    // Return ASCII End of Transmission
+    return "\x04";
   } else if (result == 0 || !(pfd.revents & POLLIN)) {
+    // No data available, return empty string
     return "";
   }
 
@@ -120,7 +122,8 @@ std::string ToolsNetCon::readConsole (int sockfd, size_t size) {
   int received = recv(sockfd, buffer, size, 0);
   if (received <= 0) {
     std::cerr << "Failed to receive data from telnet server." << std::endl;
-    return "";
+    // Return ASCII End of Transmission
+    return "\x04";
   }
 
   // Convert the relevant part of the buffer to a string

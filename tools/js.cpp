@@ -185,6 +185,11 @@ struct customJS {
       if (!size) size = 1024;
 
       const std::string output = ToolsNetCon::readConsole(sockfd, size);
+
+      if (output == "\x04") {
+        return duk_generic_error(ctx, "game.read: Failed to read from socket");
+      }
+
       duk_push_lstring(ctx, output.c_str(), output.length());
       return 1;
 
