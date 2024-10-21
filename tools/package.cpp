@@ -40,7 +40,7 @@ ToolsPackage::PackageData::PackageData (QJsonObject package, const std::string &
 
   // The version and args properties were introduced in version 3
   // Use a placeholder for version if not provided
-  if (package.contains("version")) this->version = "1.0.0";
+  if (!package.contains("version")) this->version = "1.0.0";
   else this->version = package["version"].toString().toStdString();
 
   // Leave args blank if not provided
