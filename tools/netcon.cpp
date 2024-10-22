@@ -33,7 +33,7 @@ void ToolsNetCon::disconnect (int sockfd)
 }
 #endif
 
-// Attempts to connect to the game's telnet console on SPPLICE_NETCON_PORT
+// Attempts to connect to the game's TCP console on SPPLICE_NETCON_PORT
 int ToolsNetCon::attemptConnection () {
 
 #ifdef TARGET_WINDOWS
@@ -50,11 +50,11 @@ int ToolsNetCon::attemptConnection () {
   // Create a socket
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0) {
-    std::cerr << "Failed to create a network socket for telnet." << std::endl;
+    std::cerr << "Failed to create a network socket for TCP console." << std::endl;
     return -1;
   }
 
-  // Point the socket to the game's telnet server
+  // Point the socket to the game's TCP server
   sockaddr_in server_addr;
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(SPPLICE_NETCON_PORT);
@@ -70,7 +70,7 @@ int ToolsNetCon::attemptConnection () {
 
 }
 
-// Sends a command to the telnet server on the given socket
+// Sends a command to the TCP consoleserver on the given socket
 bool ToolsNetCon::sendCommand (int sockfd, std::string command) {
 
   // Commands are only processed upon line termination
@@ -78,7 +78,7 @@ bool ToolsNetCon::sendCommand (int sockfd, std::string command) {
 
   // Attempt to send data
   if (send(sockfd, command.c_str(), command.length(), 0) < 0) {
-    std::cerr << "Failed to send command to telnet server." << std::endl;
+    std::cerr << "Failed to send command to TCP console server." << std::endl;
     return false;
   }
   return true;
@@ -93,7 +93,7 @@ bool ToolsNetCon::sendCommand (int sockfd, std::string command) {
   #define SOCKET_ERROR -1
 #endif
 
-// Reads the given amount of bytes from the telnet console on the given socket
+// Reads the given amount of bytes from the TCP console on the given socket
 std::string ToolsNetCon::readConsole (int sockfd, size_t size) {
 
   // Check if data is available for reading
@@ -106,7 +106,7 @@ std::string ToolsNetCon::readConsole (int sockfd, size_t size) {
 
   // Handle the poll result
   if (result == SOCKET_ERROR) {
-    std::cerr << "Failed to receive data from telnet server." << std::endl;
+    std::cerr << "Failed to receive data from TCP console server." << std::endl;
     // Return ASCII End of Transmission
     return "\x04";
   } else if (result == 0 || !(pfd.revents & POLLIN)) {
@@ -121,7 +121,7 @@ std::string ToolsNetCon::readConsole (int sockfd, size_t size) {
   // Attempt to receive data
   int received = recv(sockfd, buffer, size, 0);
   if (received <= 0) {
-    std::cerr << "Failed to receive data from telnet server." << std::endl;
+    std::cerr << "Failed to receive data from TCP console server." << std::endl;
     // Return ASCII End of Transmission
     return "\x04";
   }

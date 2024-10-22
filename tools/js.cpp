@@ -146,7 +146,7 @@ struct customJS {
     }
   };
 
-  // Implements an interface for connecting to the Portal 2 telnet console
+  // Implements an interface for connecting to the Portal 2 TCP console
   struct game {
     static duk_ret_t connect (duk_context *ctx) {
 
