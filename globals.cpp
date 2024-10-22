@@ -21,5 +21,5 @@ const std::filesystem::path REPO_PATH = APP_DIR / "repositories.txt";
 
 // Holds the current package installation state
 int SPPLICE_INSTALL_STATE = 0; // 0 - idle; 1 - installing; 2 - installed
-// TCP communication port between Portal 2 and Spplice
-const int SPPLICE_NETCON_PORT = 22333;
+// TCP communication port between Portal 2 and Spplice (set during runtime)
+int SPPLICE_NETCON_PORT = -1;

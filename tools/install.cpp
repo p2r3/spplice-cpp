@@ -11,6 +11,7 @@
 
 #include "../globals.h" // Project globals
 #include "curl.h" // ToolsCURL
+#include "netcon.h" // ToolsNetCon
 #include "qt.h" // ToolsQT
 #include "js.h" // ToolsJS
 
@@ -201,8 +202,12 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
     args.push_back("-applaunch");
     args.push_back("620");
     args.push_back("-tempcontent");
-    args.push_back("-netconport");
-    args.push_back(std::to_string(SPPLICE_NETCON_PORT).c_str());
+
+    // If a valid port has been established, enable TCP console server
+    if (SPPLICE_NETCON_PORT != -1) {
+      args.push_back("-netconport");
+      args.push_back(std::to_string(SPPLICE_NETCON_PORT).c_str());
+    }
 
     // Append any additional package-specific arguments
     for (const std::string &arg : extraArgs) {
@@ -216,7 +221,9 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
     std::cerr << "Failed to call Steam binary from fork." << std::endl;
 
     // If the above failed, revert to using the Steam browser protocol
-    std::string command = "xdg-open steam://run/620//-tempcontent -netconport " + std::to_string(SPPLICE_NETCON_PORT);
+    std::string command = "xdg-open steam://run/620//-tempcontent";
+    if (SPPLICE_NETCON_PORT != -1) command += " -netconport " + std::to_string(SPPLICE_NETCON_PORT);
+
     for (const std::string &arg : extraArgs) {
       command += " " + arg;
     }
@@ -251,7 +258,10 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
   si.dwFlags = STARTF_USESHOWWINDOW;
   si.wShowWindow = SW_HIDE;  // Hide the window for the detached process
 
-  std::wstring args = L"-applaunch 620 -tempcontent -netconport " + std::to_wstring(SPPLICE_NETCON_PORT);
+  std::wstring args = L"-applaunch 620 -tempcontent";
+  if (SPPLICE_NETCON_PORT != -1) {
+    args += L" -netconport " + std::to_wstring(SPPLICE_NETCON_PORT);
+  }
 
   // Append any additional package-specific arguments
   for (const std::string &arg : extraArgs) {
@@ -499,6 +509,26 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
   std::filesystem::create_directories(tmpPackageDirectory / "maps");
   std::filesystem::create_directories(tmpPackageDirectory / "maps" / "soundcache");
 
+  // Find the JS API entry point
+  const std::filesystem::path jsEntryPoint = tmpPackageDirectory / "main.js";
+  bool jsEntryPointExists = std::filesystem::exists(jsEntryPoint);
+
+  // Disable the TCP console server by default
+  SPPLICE_NETCON_PORT = -1;
+
+  // If the JS API is in use, enable the TCP console server
+  if (jsEntryPointExists) {
+    // Find an open TCP port
+    SPPLICE_NETCON_PORT = ToolsNetCon::findOpenPort(1024, 49151);
+    if (SPPLICE_NETCON_PORT == -1) {
+  #ifndef TARGET_WINDOWS
+      return std::pair<bool, std::string> (false, "Failed to find an open port for the JS API.");
+  #else
+      return std::pair<bool, std::wstring> (false, L"Failed to find an open port for the JS API.");
+  #endif
+    }
+  }
+
   // Start Portal 2
   if (!startPortal2(args)) {
     std::filesystem::remove_all(tmpPackageDirectory);
@@ -565,13 +595,11 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
     std::filesystem::copy_file(soundcacheSourcePath, soundcacheDestPath);
   }
 
-  // Run the JavaScript entrypoint (if one exists) on a detached thread
-  const std::filesystem::path jsEntryPoint = tmpPackageDirectory / "main.js";
-  if (std::filesystem::exists(jsEntryPoint)) {
-    std::thread jsThread([jsEntryPoint]() {
+  // Run the JS API entrypoint (if one exists) on a detached thread
+  if (jsEntryPointExists) {
+    std::thread ([jsEntryPoint]() {
       ToolsJS::runFile(jsEntryPoint);
-    });
-    jsThread.detach();
+    }).detach();
   }
 
   // Report install success to the UI
