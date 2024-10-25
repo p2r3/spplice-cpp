@@ -15,6 +15,8 @@
 #include <QObject>
 #include <QDialog>
 #include <QMessageBox>
+#include <QtConcurrent>
+#include <QFutureWatcher>
 #include "ui/mainwindow.h"
 #include "ui/repositories.h"
 #include "ui/settings.h"
@@ -29,24 +31,47 @@
 #include "tools/package.h"
 #include "tools/repo.h"
 
-// Fetch and display packages from the given repository URL
-void displayRepository (const std::string &url, QVBoxLayout *container) {
+// Fetch and display packages from the given repository URL asynchronously
+void displayRepository (const std::string &url, const std::string &last, QVBoxLayout *container) {
 
-  // Fetch the repository packages // TODO: Make this asynchronous
-  std::vector<const ToolsPackage::PackageData*> repository = ToolsRepo::fetchRepository(url);
+  // Set up a watcher to fetch repository packages asynchronously
+  QFutureWatcher<std::vector<const ToolsPackage::PackageData*>> *watcher;
+  watcher = new QFutureWatcher<std::vector<const ToolsPackage::PackageData*>>(container);
 
-  // Keep track of added package count to order them properly
-  int currPackage = 0;
+  // Connect a lambda that adds the items when they've been fetched
+  QObject::connect(watcher, &QFutureWatcher<std::vector<const ToolsPackage::PackageData*>>::finished, container, [container, watcher, last]() {
+    std::vector<const ToolsPackage::PackageData*> repository = watcher->result();
 
-  for (const ToolsPackage::PackageData *package : repository) {
-    // Create PackageItem widget from PackageData
-    QWidget *item = ToolsPackage::createPackageItem(package);
-    // Add the item to the package list container
-    container->insertWidget(currPackage, item);
-    currPackage ++;
-    // Sleep for a few milliseconds on each package to reduce strain on the network
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
-  }
+    // Convert last fetched repository url to QString for easier comparisons
+    QString lastQstr = QString::fromStdString(last);
+    // Keep track insertion point to order packages properly
+    int insertAt = 0;
+
+    // Move insertion point to the top of the most recently fetched repository
+    while (insertAt < container->count()) {
+      QWidget *widget = container->itemAt(insertAt)->widget();
+      if (widget->property("packageRepository").toString() == lastQstr) break;
+      insertAt ++;
+    }
+
+    for (const ToolsPackage::PackageData *package : repository) {
+      // Create PackageItem widget from PackageData
+      QWidget *item = ToolsPackage::createPackageItem(package);
+      // Add the item to the package list container
+      container->insertWidget(insertAt, item);
+      insertAt ++;
+      // Sleep for a few milliseconds on each package to reduce strain on the network
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+
+    watcher->deleteLater();
+  });
+
+  // Fetch the repository packages in a new thread
+  QFuture<std::vector<const ToolsPackage::PackageData*>> future = QtConcurrent::run([url]() {
+    return ToolsRepo::fetchRepository(url);
+  });
+  watcher->setFuture(future);
 
 }
 
@@ -87,6 +112,9 @@ void checkCacheOverride (const std::filesystem::path &configPath) {
   CACHE_DIR = std::filesystem::path(customCacheDir);
 
 }
+
+// A link to the index for the global Spplice repository
+const std::string globalRepository = "https://p2r3.github.io/spplice-repo/index.json";
 
 int main (int argc, char *argv[]) {
 
@@ -234,7 +262,11 @@ int main (int argc, char *argv[]) {
     // Define URL submit behavior
     auto submitURL = [packageContainer, urlInput, dialog]() {
       const std::string url = urlInput->text().toStdString();
-      displayRepository(url, packageContainer);
+
+      // Insert the new repository before the topmost repository
+      QWidget *widget = packageContainer->itemAt(0)->widget();
+      displayRepository(url, widget->property("packageRepository").toString().toStdString(), packageContainer);
+
       ToolsRepo::writeToFile(url);
       dialog->hide();
     };
@@ -259,13 +291,17 @@ int main (int argc, char *argv[]) {
   window.setWindowTitle("Spplice");
   window.show();
 
-  // Load the global repository
-  displayRepository("https://p2r3.github.io/spplice-repo/index.json", packageContainer);
+  // Load the global repository, putting it at the very bottom
+  displayRepository(globalRepository, "", packageContainer);
+
+  // Keep track of the previous repository to order them when fetching asynhronously
+  std::string lastRepository = globalRepository;
 
   // Load additional repositories from file
   std::vector<std::string> repositories = ToolsRepo::readFromFile();
   for (const std::string &url : repositories) {
-    displayRepository(url, packageContainer);
+    displayRepository(url, lastRepository, packageContainer);
+    lastRepository = url;
   }
 
   // Clean up CURL on program termination

@@ -50,13 +50,16 @@ endfunction()
 if (SPPLICE_TARGET_WINDOWS)
   set(Qt5_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/win32/lib/cmake/Qt5")
   set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/win32/lib/cmake/Qt5Widgets")
+  set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/win32/lib/cmake/Qt5Concurrent")
 else()
   set(Qt5_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/linux/lib/cmake/Qt5")
   set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/linux/lib/cmake/Qt5Widgets")
+  set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/linux/lib/cmake/Qt5Concurrent")
 endif()
 
-# Find Qt5Widgets.
+# Find required Qt5 components.
 find_package(Qt5 REQUIRED COMPONENTS Widgets)
+find_package(Qt5 REQUIRED COMPONENTS Concurrent)
 
 # Add resources file
 qt_add_resources(RESOURCES resources.qrc)
@@ -76,8 +79,9 @@ add_executable(SppliceCPP
   ${RESOURCES}
 )
 
-# Link Qt5Widgets
+# Link required Qt5 components.
 target_link_libraries(SppliceCPP Qt5::Widgets)
+target_link_libraries(SppliceCPP Qt5::Concurrent)
 
 # Finally, link our project's individual dependencies.
 if (SPPLICE_TARGET_WINDOWS) # If building for Windows:
