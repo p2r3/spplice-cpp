@@ -34,62 +34,6 @@ void ToolsNetCon::disconnect (int sockfd)
 }
 #endif
 
-// Finds an open TCP port in the given range (inclusive)
-int ToolsNetCon::findOpenPort (const int start, const int end) {
-
-#ifdef TARGET_WINDOWS
-  // If no sockets are open, set up Winsock
-  if (++openSockets == 1) {
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-      std::cerr << "WSAStartup failed." << std::endl;
-      return -1;
-    }
-  }
-#endif
-
-  for (int port = start; port <= end; port ++) {
-
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) {
-      std::cerr << "Socket creation failed on port " << port << " when scanning for open ports." << std::endl;
-      break;
-    }
-
-    struct sockaddr_in addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port = htons(port);
-
-    int result = bind(sockfd, (struct sockaddr*)&addr, sizeof(addr));
-    if (result == 0) {
-      // Successfully bound to the port, close the socket and return the port
-      ToolsNetCon::disconnect(sockfd);
-      return port;
-    }
-
-#ifdef TARGET_WINDOWS
-    // Increment openSockets to prevent Winsock from being cleaned up
-    openSockets ++;
-#endif
-
-    // Port is in use, try the next one
-    ToolsNetCon::disconnect(sockfd);
-
-  }
-
-#ifdef TARGET_WINDOWS
-  // Reset openSockets and clean up Winsock manually
-  openSockets --;
-  WSACleanup();
-#endif
-
-  // No open port found in the range
-  return -1;
-
-}
-
 // Attempts to connect to the game's TCP console on SPPLICE_NETCON_PORT
 int ToolsNetCon::attemptConnection () {
 

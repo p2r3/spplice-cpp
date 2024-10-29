@@ -518,15 +518,9 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
 
   // If the JS API is in use, enable the TCP console server
   if (jsEntryPointExists) {
-    // Find an open TCP port
-    SPPLICE_NETCON_PORT = ToolsNetCon::findOpenPort(1024, 49151);
-    if (SPPLICE_NETCON_PORT == -1) {
-  #ifndef TARGET_WINDOWS
-      return std::pair<bool, std::string> (false, "Failed to find an open port for the JS API.");
-  #else
-      return std::pair<bool, std::wstring> (false, L"Failed to find an open port for the JS API.");
-  #endif
-    }
+    // Use the default Source listen port, which is very likely to be free
+    // In Portal 2, only a UDP connection exists on this port by default
+    SPPLICE_NETCON_PORT = 27015;
   }
 
   // Start Portal 2
