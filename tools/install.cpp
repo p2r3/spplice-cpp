@@ -258,7 +258,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
   si.dwFlags = STARTF_USESHOWWINDOW;
   si.wShowWindow = SW_HIDE;  // Hide the window for the detached process
 
-  std::wstring args = L"-applaunch 620 -tempcontent";
+  std::wstring args = L"-applaunch 620 -tempcontent -condebug -conclearlog";
   if (SPPLICE_NETCON_PORT != -1) {
     args += L" -netconport " + std::to_wstring(SPPLICE_NETCON_PORT);
   }

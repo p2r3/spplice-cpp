@@ -6,13 +6,15 @@
 #include <chrono>
 #include "../deps/shared/duktape/duktape.h"
 
+#include "../globals.h" // Project globals
+
 #ifndef TARGET_WINDOWS
   #include "../deps/linux/include/curl/curl.h"
 #else
   #include "../deps/win32/include/curl/curl.h"
+  #include <windows.h>
 #endif
 
-#include "../globals.h" // Project globals
 #include "netcon.h" // ToolsNetCon
 #include "curl.h" // ToolsCURL
 
@@ -23,6 +25,9 @@
 #define MAX_WEBSOCKETS 32
 // Contains all WebSockets created in the JS environment
 CURL *webSockets[MAX_WEBSOCKETS];
+
+// HACK: Read offset of the console.log file used for the Windows console workaround
+uint64_t consoleLogOffset = 0;
 
 // Implements custom functions for the JavaScript context
 struct customJS {
@@ -170,6 +175,24 @@ struct customJS {
       if (sockfd < 0) return duk_type_error(ctx, "game.send: Invalid socket provided");
 
       const char *command = duk_to_string(ctx, 1);
+
+// HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
+#ifdef TARGET_WINDOWS
+      const HWND m_hEngine = FindWindowA("Valve001", 0);
+      if (m_hEngine == NULL) {
+        std::cerr << "Failed to find engine window." << std::endl;
+        return duk_generic_error(ctx, "game.send: Failed to send command");
+      }
+
+      COPYDATASTRUCT m_cData;
+      m_cData.cbData = strlen(command) + 1;
+      m_cData.dwData = 0;
+      m_cData.lpData = (void *)command;
+
+      SendMessageA(m_hEngine, WM_COPYDATA, 0, (LPARAM)&m_cData);
+      return 0;
+#endif
+
       if (!ToolsNetCon::sendCommand(sockfd, command)) {
         return duk_generic_error(ctx, "game.send: Failed to send command");
       }
@@ -183,6 +206,44 @@ struct customJS {
 
       size_t size = duk_to_uint(ctx, 1);
       if (!size) size = 1024;
+
+// HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
+#ifdef TARGET_WINDOWS
+      std::filesystem::path logPath = (GAME_DIR / "portal2") / "console.log";
+
+      // If no logfile exists yet, return empty string
+      if (!std::filesystem::exists(logPath)) {
+        duk_push_string(ctx, "");
+        return 1;
+      }
+
+      // Open the file in binary mode
+      std::ifstream file(logPath, std::ios::binary);
+      if (!file) {
+        std::cerr << "Failed to open file: " << logPath << std::endl;
+        return duk_generic_error(ctx, "game.read: Failed to read from socket");
+      }
+
+      // Seek to the desired offset, return to start of file on failure
+      file.seekg(consoleLogOffset);
+      if (!file) {
+        std::cerr << "Failed to seek to offset: " << consoleLogOffset << std::endl;
+        consoleLogOffset = 0;
+        duk_push_string(ctx, "");
+        return 1;
+      }
+
+      // Read N bytes into a string
+      std::string buffer(size, '\0');
+      file.read(&buffer[0], size);
+
+      // Handle cases where fewer bytes were read (e.g., EOF)
+      buffer.resize(file.gcount());
+
+      consoleLogOffset += buffer.length();
+      duk_push_lstring(ctx, buffer.c_str(), buffer.length());
+      return 1;
+#endif
 
       const std::string output = ToolsNetCon::readConsole(sockfd, size);
 
