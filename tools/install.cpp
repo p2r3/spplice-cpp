@@ -258,7 +258,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
   si.dwFlags = STARTF_USESHOWWINDOW;
   si.wShowWindow = SW_HIDE;  // Hide the window for the detached process
 
-  std::wstring args = L"-applaunch 620 -tempcontent -condebug -conclearlog";
+  std::wstring args = L"-applaunch 620 -tempcontent -condebug";
   if (SPPLICE_NETCON_PORT != -1) {
     args += L" -netconport " + std::to_wstring(SPPLICE_NETCON_PORT);
   }
@@ -590,11 +590,17 @@ void ToolsInstall::uninstall () {
   if (GAME_DIR.empty() || SPPLICE_INSTALL_STATE == 0) return;
 
   // Remove the tempcontent directory link
-  const std::filesystem::path tempcontentPath = std::filesystem::path(GAME_DIR) / "portal2_tempcontent";
+  const std::filesystem::path tempcontentPath = GAME_DIR / "portal2_tempcontent";
   if (isDirectoryLink(tempcontentPath)) unlinkDirectory(tempcontentPath);
 
   // Remove the actual package directory containing all package files
   const std::filesystem::path tmpPackageDirectory = CACHE_DIR / "tempcontent";
   std::filesystem::remove_all(tmpPackageDirectory);
+
+  // HACK: The Windows console workaround creates a logfile that needs to be cleaned up
+#ifdef TARGET_WINDOWS
+  std::filesystem::path logPath = (GAME_DIR / "portal2") / "console.log";
+  if (std::filesystem::exists(logPath)) std::filesystem::remove(logPath);
+#endif
 
 }

@@ -155,6 +155,16 @@ struct customJS {
   struct game {
     static duk_ret_t connect (duk_context *ctx) {
 
+// HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
+#ifdef TARGET_WINDOWS
+      std::filesystem::path logPath = (GAME_DIR / "portal2") / "console.log";
+      if (std::filesystem::exists(logPath)) {
+        consoleLogOffset = std::filesystem::file_size(logPath);
+      }
+      duk_push_number(ctx, 1);
+      return 1;
+#endif
+
       int sockfd = ToolsNetCon::attemptConnection();
       duk_push_number(ctx, sockfd);
       return 1;
@@ -164,6 +174,11 @@ struct customJS {
 
       int sockfd = duk_to_int(ctx, 0);
       if (sockfd < 0) return duk_type_error(ctx, "game.disconnect: Invalid socket provided");
+
+// HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
+#ifdef TARGET_WINDOWS
+      return 0;
+#endif
 
       ToolsNetCon::disconnect(sockfd);
       return 0;
