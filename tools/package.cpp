@@ -144,23 +144,15 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
     }
   }
 
-    // Attempt installation
-#ifndef TARGET_WINDOWS
-  std::pair<bool, std::string> installationResult = ToolsInstall::installPackageFile(filePath, package->args);
-#else
-  std::pair<bool, std::wstring> installationResult = ToolsInstall::installPackageFile(filePath, package->args);
-#endif
+  // Attempt installation
+  std::string installationResult = ToolsInstall::installPackageFile(filePath, package->args);
 
   // Remove downloaded archive post-installation if caching is disabled
   if (!CACHE_ENABLE) std::filesystem::remove(filePath);
 
   // If installation failed, display error and exit early
-  if (installationResult.first == false) {
-#ifndef TARGET_WINDOWS
-    ToolsQT::displayErrorPopup("Installation aborted", installationResult.second);
-#else
-    ToolsQT::displayErrorPopup("Installation aborted", std::string(installationResult.second.begin(), installationResult.second.end()));
-#endif
+  if (installationResult != "") {
+    ToolsQT::displayErrorPopup("Installation aborted", installationResult);
 
     SPPLICE_INSTALL_STATE = 0;
     emit installStateUpdate();
@@ -181,7 +173,7 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
   }
 
   // Uninstall the package, reset the state
-  ToolsInstall::Uninstall(installationResult.second);
+  ToolsInstall::uninstall();
 
   SPPLICE_INSTALL_STATE = 0;
   emit installStateUpdate();

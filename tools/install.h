@@ -9,15 +9,13 @@
 class ToolsInstall {
   public:
     static bool extractLocalFile (const std::filesystem::path path, const std::filesystem::path dest);
+    static std::string installPackageFile (const std::filesystem::path packageFile, const std::vector<std::string> args);
+    static void uninstall ();
 #ifndef TARGET_WINDOWS
     static std::string getProcessPath (const std::string &processName);
-    static std::pair<bool, std::string> installPackageFile (const std::filesystem::path packageFile, const std::vector<std::string> args);
-    static void Uninstall (const std::string &gamePath);
 #else
     static std::wstring getProcessPath (const std::string &processName);
-    static std::pair<bool, std::wstring> installPackageFile (const std::filesystem::path packageFile, const std::vector<std::string> args);
-    static void Uninstall (const std::wstring &gamePath);
-#endif // ifndef TARGET_WINDOWS
+#endif
 };
 
 #endif

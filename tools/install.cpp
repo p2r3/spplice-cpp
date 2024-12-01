@@ -483,12 +483,7 @@ bool isDirectoryLink (const std::filesystem::path linkName) {
 #endif
 
 // Installs the package located at the temporary directory (CACHE_DIR/current_package)
-#ifndef TARGET_WINDOWS
-std::pair<bool, std::string> ToolsInstall::installPackageFile (const std::filesystem::path packageFile, const std::vector<std::string> args)
-#else
-std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::filesystem::path packageFile, const std::vector<std::string> args)
-#endif
-{
+std::string ToolsInstall::installPackageFile (const std::filesystem::path packageFile, const std::vector<std::string> args) {
 
   // Extract the package to a temporary directory
   const std::filesystem::path tmpPackageDirectory = CACHE_DIR / "tempcontent";
@@ -498,11 +493,7 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
   std::filesystem::create_directories(tmpPackageDirectory);
 
   if (!extractLocalFile(packageFile, tmpPackageDirectory)) {
-#ifndef TARGET_WINDOWS
-    return std::pair<bool, std::string> (false, "Failed to extract package. Please clear the cache and try again.");
-#else
-    return std::pair<bool, std::wstring> (false, L"Failed to extract package. Please clear the cache and try again.");
-#endif
+    return "Failed to extract package. Please clear the cache and try again.";
   }
 
   // Ensure the existence of a soundcache directory
@@ -526,11 +517,7 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
   // Start Portal 2
   if (!startPortal2(args)) {
     std::filesystem::remove_all(tmpPackageDirectory);
-#ifndef TARGET_WINDOWS
-    return std::pair<bool, std::string> (false, "Failed to start Portal 2. Is Steam running?");
-#else
-    return std::pair<bool, std::wstring> (false, L"Failed to start Portal 2. Is Steam running?");
-#endif
+    return "Failed to start Portal 2. Is Steam running?";
   }
 
   // Find the Portal 2 game files path
@@ -546,10 +533,10 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
   }
 #endif
 
-  std::filesystem::path gamePath = std::filesystem::path(gameProcessPath).parent_path();
-  std::cout << "Found Portal 2 at " << gamePath << std::endl;
+  GAME_DIR = std::filesystem::path(gameProcessPath).parent_path();
+  std::cout << "Found Portal 2 at " << GAME_DIR << std::endl;
 
-  std::filesystem::path tempcontentPath = gamePath / "portal2_tempcontent";
+  std::filesystem::path tempcontentPath = GAME_DIR / "portal2_tempcontent";
 
   // Handle an existing tempcontent directory
   if (std::filesystem::exists(tempcontentPath)) {
@@ -558,7 +545,7 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
       unlinkDirectory(tempcontentPath);
     } else {
       // If it's an actual file/directory, move it away to be safe
-      std::filesystem::path tempcontentBackupPath = gamePath.parent_path() / ".spplice_tempcontent_backup";
+      std::filesystem::path tempcontentBackupPath = GAME_DIR.parent_path() / ".spplice_tempcontent_backup";
       std::filesystem::create_directories(tempcontentBackupPath);
       // Check for the next available backup slot
       for (int i = 1; i <= 64; i ++) {
@@ -573,14 +560,10 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
   // Link the extracted package files to the destination tempcontent directory
   if (!linkDirectory(tmpPackageDirectory, tempcontentPath)) {
     std::filesystem::remove_all(tmpPackageDirectory);
-#ifndef TARGET_WINDOWS
-    return std::pair<bool, std::string> (false, "Failed to link package files to portal2_tempcontent.");
-#else
-    return std::pair<bool, std::wstring> (false, L"Failed to link package files to portal2_tempcontent.");
-#endif
+    return "Failed to link package files to portal2_tempcontent.";
   }
 
-  const std::filesystem::path soundcacheSourcePath = gamePath / "portal2" / "maps" / "soundcache" / "_master.cache";
+  const std::filesystem::path soundcacheSourcePath = GAME_DIR / "portal2" / "maps" / "soundcache" / "_master.cache";
   const std::filesystem::path soundcacheDestPath = tempcontentPath / "maps" / "soundcache" / "_master.cache";
 
   // Link the soundcache from base Portal 2 to skip waiting for it to generate
@@ -597,24 +580,18 @@ std::pair<bool, std::wstring> ToolsInstall::installPackageFile (const std::files
   }
 
   // Report install success to the UI
-#ifndef TARGET_WINDOWS
-  return std::pair<bool, std::string> (true, gamePath.string());
-#else
-  return std::pair<bool, std::wstring> (true, gamePath.wstring());
-#endif
+  return "";
 
 }
 
-#ifndef TARGET_WINDOWS
-void ToolsInstall::Uninstall (const std::string &gamePath)
-#else
-void ToolsInstall::Uninstall (const std::wstring &gamePath)
-#endif
-{
+void ToolsInstall::uninstall () {
+
+  // If no package is installed, do nothing
+  if (GAME_DIR.empty() || SPPLICE_INSTALL_STATE == 0) return;
 
   // Remove the tempcontent directory link
-  const std::filesystem::path tempcontentPath = std::filesystem::path(gamePath) / "portal2_tempcontent";
-  unlinkDirectory(tempcontentPath);
+  const std::filesystem::path tempcontentPath = std::filesystem::path(GAME_DIR) / "portal2_tempcontent";
+  if (isDirectoryLink(tempcontentPath)) unlinkDirectory(tempcontentPath);
 
   // Remove the actual package directory containing all package files
   const std::filesystem::path tmpPackageDirectory = CACHE_DIR / "tempcontent";

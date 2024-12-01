@@ -16,6 +16,9 @@ const std::filesystem::path APP_DIR = (std::filesystem::path(std::getenv("HOME")
 const std::filesystem::path APP_DIR = std::filesystem::path(std::getenv("APPDATA")) / "spplice-cpp";
 #endif
 
+// Points to last known Portal 2 game files directory
+std::filesystem::path GAME_DIR;
+
 // Points to the external repository file
 const std::filesystem::path REPO_PATH = APP_DIR / "repositories.txt";
 
