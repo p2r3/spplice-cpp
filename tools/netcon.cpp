@@ -42,7 +42,7 @@ int ToolsNetCon::attemptConnection () {
   if (++openSockets == 1) {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-      std::cerr << "WSAStartup failed." << std::endl;
+      LOGFILE << "[E] WSAStartup failed." << std::endl;
       return -1;
     }
   }
@@ -51,7 +51,7 @@ int ToolsNetCon::attemptConnection () {
   // Create a socket
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0) {
-    std::cerr << "Failed to create a network socket for TCP console." << std::endl;
+    LOGFILE << "[E] Failed to create a network socket for TCP console." << std::endl;
     return -1;
   }
 
@@ -79,7 +79,7 @@ bool ToolsNetCon::sendCommand (int sockfd, std::string command) {
 
   // Attempt to send data
   if (send(sockfd, command.c_str(), command.length(), 0) < 0) {
-    std::cerr << "Failed to send command to TCP console server." << std::endl;
+    LOGFILE << "[E] Failed to send command to TCP console server." << std::endl;
     return false;
   }
   return true;
@@ -107,7 +107,7 @@ std::string ToolsNetCon::readConsole (int sockfd, size_t size) {
 
   // Handle the poll result
   if (result == SOCKET_ERROR) {
-    std::cerr << "Failed to receive data from TCP console server." << std::endl;
+    LOGFILE << "[E] Failed to receive data from TCP console server." << std::endl;
     // Return ASCII End of Transmission
     return "\x04";
   } else if (result == 0 || !(pfd.revents & POLLIN)) {
@@ -122,7 +122,7 @@ std::string ToolsNetCon::readConsole (int sockfd, size_t size) {
   // Attempt to receive data
   int received = recv(sockfd, buffer, size, 0);
   if (received <= 0) {
-    std::cerr << "Failed to receive data from TCP console server." << std::endl;
+    LOGFILE << "[E] Failed to receive data from TCP console server." << std::endl;
     // Return ASCII End of Transmission
     return "\x04";
   }

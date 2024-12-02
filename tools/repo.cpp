@@ -52,17 +52,17 @@ void ToolsRepo::writeToFile (const std::string &url) {
       if (line == url) return;
     }
   } else {
-    std::cerr << "Failed to open " << REPO_PATH << " for reading." << std::endl;
+    LOGFILE << "[E] Failed to open " << REPO_PATH.c_str() << " for reading." << std::endl;
   }
 
   std::ofstream file(REPO_PATH, std::ios::app);
 
   // Append the URL to the end of the file
   if (file.is_open()) {
-    file << url << std::endl;
+    file << url;
     file.close();
   } else {
-    std::cerr << "Failed to open " << REPO_PATH << " for writing." << std::endl;
+    LOGFILE << "[E] Failed to open " << REPO_PATH.c_str() << " for writing." << std::endl;
   }
 
 }
@@ -74,12 +74,12 @@ std::vector<std::string> ToolsRepo::readFromFile () {
 
   // Check if the file exists
   if (!std::filesystem::exists(REPO_PATH)) {
-    std::cout << REPO_PATH << " does not exist, creating it..." << std::endl;
+    LOGFILE << REPO_PATH.c_str() << " does not exist, creating it..." << std::endl;
 
     // If it doesn't, write a blank file and exit
     std::ofstream file(REPO_PATH);
     if (!file.is_open()) {
-      std::cerr << "Failed to create " << REPO_PATH << std::endl;
+      LOGFILE << "[E] Failed to create " << REPO_PATH.c_str() << std::endl;
     }
 
     return output;
@@ -89,7 +89,7 @@ std::vector<std::string> ToolsRepo::readFromFile () {
   std::ifstream file(REPO_PATH);
 
   if (!file.is_open()) {
-    std::cerr << "Failed to open " << REPO_PATH << " for reading." << std::endl;
+    LOGFILE << "[E] Failed to open " << REPO_PATH.c_str() << " for reading." << std::endl;
     return output;
   }
 
@@ -109,7 +109,7 @@ void ToolsRepo::removeFromFile (const std::string &url) {
 
   // Check if the file exists
   if (!std::filesystem::exists(REPO_PATH)) {
-    std::cout << REPO_PATH << " does not exist." << std::endl;
+    LOGFILE << REPO_PATH.c_str() << " does not exist." << std::endl;
     return;
   }
 
@@ -118,7 +118,7 @@ void ToolsRepo::removeFromFile (const std::string &url) {
   std::ofstream tempFile(tempPath);
 
   if (!tempFile.is_open()) {
-    std::cerr << "Failed to open " << tempPath << " for writing." << std::endl;
+    LOGFILE << "[E] Failed to open " << tempPath.c_str() << " for writing." << std::endl;
     return;
   }
 
@@ -126,7 +126,7 @@ void ToolsRepo::removeFromFile (const std::string &url) {
   std::ifstream file(REPO_PATH);
 
   if (!file.is_open()) {
-    std::cerr << "Failed to open " << REPO_PATH << " for reading." << std::endl;
+    LOGFILE << "[E] Failed to open " << REPO_PATH.c_str() << " for reading." << std::endl;
     return;
   }
 
@@ -134,7 +134,7 @@ void ToolsRepo::removeFromFile (const std::string &url) {
   std::string line;
   while (std::getline(file, line)) {
     if (line == url) continue;
-    tempFile << line << std::endl;
+    tempFile << line;
   }
 
   file.close();

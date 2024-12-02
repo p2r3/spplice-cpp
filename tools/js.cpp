@@ -38,12 +38,12 @@ struct customJS {
 
       int argc = duk_get_top(ctx);
 
-      std::cout << "[JS] ";
+      LOGFILE << "[JS I] " << std::endl;
       for (int i = 0; i < argc; i ++) {
         const char *str = duk_to_string(ctx, i);
-        if (str) std::cout << str << " ";
+        if (str) LOGFILE << str << " " << std::endl;
       }
-      std::cout << std::endl;
+      LOGFILE << std::endl;
 
       return 0;
 
@@ -52,12 +52,12 @@ struct customJS {
 
       int argc = duk_get_top(ctx);
 
-      std::cerr << "[JS] ";
+      LOGFILE << "[JS E] " << std::endl;
       for (int i = 0; i < argc; i ++) {
         const char *str = duk_to_string(ctx, i);
-        if (str) std::cerr << str << " ";
+        if (str) LOGFILE << str << " ";
       }
-      std::cerr << std::endl;
+      LOGFILE << std::endl;
 
       return 0;
 
@@ -195,7 +195,7 @@ struct customJS {
 #ifdef TARGET_WINDOWS
       const HWND m_hEngine = FindWindowA("Valve001", 0);
       if (m_hEngine == NULL) {
-        std::cerr << "Failed to find engine window." << std::endl;
+        LOGFILE << "[E] Failed to find engine window." << std::endl;
         return duk_generic_error(ctx, "game.send: Failed to send command");
       }
 
@@ -235,14 +235,14 @@ struct customJS {
       // Open the file in binary mode
       std::ifstream file(logPath, std::ios::binary);
       if (!file) {
-        std::cerr << "Failed to open file: " << logPath << std::endl;
+        LOGFILE << "[E] Failed to open file: " << logPath.c_str() << std::endl;
         return duk_generic_error(ctx, "game.read: Failed to read from socket");
       }
 
       // Seek to the desired offset, return to start of file on failure
       file.seekg(consoleLogOffset);
       if (!file) {
-        std::cerr << "Failed to seek to offset: " << consoleLogOffset << std::endl;
+        LOGFILE << "[E] Failed to seek to offset: " << consoleLogOffset << std::endl;
         consoleLogOffset = 0;
         duk_push_string(ctx, "");
         return 1;
@@ -395,7 +395,7 @@ void ToolsJS::runFile (const std::filesystem::path &filePath) {
 
   // Check if the input file exists
   if (!std::filesystem::exists(filePath)) {
-    std::cerr << "JavaScript file " << filePath << " not found." << std::endl;
+    LOGFILE << "[E] JavaScript file " << filePath.c_str() << " not found." << std::endl;
     return;
   }
 
@@ -465,7 +465,7 @@ void ToolsJS::runFile (const std::filesystem::path &filePath) {
   const std::string code = fileBuffer.str();
   duk_push_lstring(ctx, code.c_str(), code.length());
   if (duk_peval(ctx) != 0) {
-    std::cerr << "[" << filePath.string() << "] " << duk_safe_to_string(ctx, -1) << std::endl;
+    LOGFILE << "[E] [" << filePath.c_str() << "] " << duk_safe_to_string(ctx, -1) << std::endl;
   }
 
   // Clean up the context

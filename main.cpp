@@ -96,7 +96,7 @@ void checkCacheOverride (const std::filesystem::path &configPath) {
 
   std::ifstream configFile(configPath);
   if (!configFile.is_open()) {
-    std::cerr << "Failed to open " << configPath << " for reading." << std::endl;
+    std::cerr << "[E] Failed to open " << configPath.c_str() << " for reading." << std::endl;
     return;
   }
 
@@ -105,7 +105,7 @@ void checkCacheOverride (const std::filesystem::path &configPath) {
   configFile.close();
 
   if (!std::filesystem::exists(customCacheDir)) {
-    std::cerr << "Invalid cache directory " << customCacheDir << "." << std::endl;
+    std::cerr << "[E] Invalid cache directory " << customCacheDir.c_str() << "." << std::endl;
     return;
   }
 
@@ -127,14 +127,16 @@ int main (int argc, char *argv[]) {
   try { // Ensure CACHE_DIR exists
     std::filesystem::create_directories(CACHE_DIR);
   } catch (const std::filesystem::filesystem_error& e) {
-    std::cerr << "Failed to create temporary directory " << CACHE_DIR << ": " << e.what() << std::endl;
+    std::cerr << "[E] Failed to create temporary directory " << CACHE_DIR.c_str() << ": " << e.what() << std::endl;
   }
 
   try { // Ensure APP_DIR exists
     std::filesystem::create_directories(APP_DIR);
   } catch (const std::filesystem::filesystem_error& e) {
-    std::cerr << "Failed to create application directory " << APP_DIR << ": " << e.what() << std::endl;
+    std::cerr << "[E] Failed to create application directory " << APP_DIR.c_str() << ": " << e.what() << std::endl;
   }
+  // Open the log file
+  LOGFILE = std::ofstream(APP_DIR / "log.txt");
 
   // Set up high-DPI scaling
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -187,7 +189,7 @@ int main (int argc, char *argv[]) {
       if (!CACHE_ENABLE) {
         std::ofstream disableCacheFile(APP_DIR / "disable_cache");
         if (!disableCacheFile.is_open()) {
-          std::cerr << "Failed to create disable_cache file." << std::endl;
+          LOGFILE << "[E] Failed to create disable_cache file." << std::endl;
         }
       } else {
         std::filesystem::remove(APP_DIR / "disable_cache");
@@ -229,7 +231,7 @@ int main (int argc, char *argv[]) {
       // Write the new cache directory to the config file
       std::ofstream configFile(APP_DIR / "cache_dir.txt");
       if (!configFile.is_open()) {
-        std::cerr << "Failed to open cache config file for writing." << std::endl;
+        LOGFILE << "[E] Failed to open cache config file for writing." << std::endl;
       } else {
         configFile << CACHE_DIR.string();
       }

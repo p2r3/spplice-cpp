@@ -50,7 +50,7 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
   archive_write_disk_set_options(extracted, ARCHIVE_EXTRACT_TIME);
 
   if ((r = archive_read_open_filename_w(archive, path.wstring().c_str(), 10240))) {
-    std::cerr << "Could not open file: " << archive_error_string(archive) << std::endl;
+    LOGFILE << "[E] Could not open file: " << archive_error_string(archive) << std::endl;
     return false;
   }
 
@@ -60,7 +60,7 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
     std::filesystem::path full_path = dest / archive_entry_pathname(entry);
     archive_entry_set_pathname_utf8(entry, full_path.string().c_str());
 
-    std::cout << "Extracting: " << archive_entry_pathname(entry) << std::endl;
+    LOGFILE << "[I] Extracting: " << archive_entry_pathname(entry) << std::endl;
     archive_write_header(extracted, entry);
 
     const void* buff;
@@ -71,13 +71,13 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
       r = archive_read_data_block(archive, &buff, &size, &offset);
       if (r == ARCHIVE_EOF) break;
       if (r != ARCHIVE_OK) {
-        std::cerr << "Archive read error: " << archive_error_string(archive) << std::endl;
+        LOGFILE << "[E] Archive read error: " << archive_error_string(archive) << std::endl;
         output = false;
         break;
       }
       r = archive_write_data_block(extracted, buff, size, offset);
       if (r != ARCHIVE_OK) {
-        std::cerr << "Archive write error: " << archive_error_string(extracted) << std::endl;
+        LOGFILE << "[E] Archive write error: " << archive_error_string(extracted) << std::endl;
         output = false;
         break;
       }
@@ -183,13 +183,13 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
 
   std::string steamPath = ToolsInstall::getProcessPath("steam");
   if (steamPath.length() == 0) {
-    std::cerr << "Failed to find Steam process path. Is Steam running?" << std::endl;
+    LOGFILE << "[E] Failed to find Steam process path. Is Steam running?" << std::endl;
     return false;
   }
 
   pid_t pid = fork();
   if (pid == -1) {
-    std::cerr << "Failed to fork process." << std::endl;
+    LOGFILE << "[E] Failed to fork process." << std::endl;
     return false;
   }
 
@@ -218,7 +218,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
     execv(steamPath.c_str(), const_cast<char* const*>(args.data()));
 
     // execv only returns on error
-    std::cerr << "Failed to call Steam binary from fork." << std::endl;
+    LOGFILE << "[E] Failed to call Steam binary from fork." << std::endl;
 
     // If the above failed, revert to using the Steam browser protocol
     std::string command = "xdg-open steam://run/620//-tempcontent";
@@ -229,7 +229,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
     }
 
     if (system(command.c_str()) != 0) {
-      std::cerr << "Failed to open Steam URI." << std::endl;
+      LOGFILE << "[E] Failed to open Steam URI." << std::endl;
     }
 
     // Exit from the child process
@@ -245,7 +245,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
 
   std::wstring steamPath = ToolsInstall::getProcessPath("steam.exe");
   if (steamPath.length() == 0) {
-    std::cerr << "Failed to find Steam process path. Is Steam running?" << std::endl;
+    LOGFILE << "[E] Failed to find Steam process path. Is Steam running?" << std::endl;
     return false;
   }
 
@@ -301,7 +301,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
 bool linkDirectory (const std::filesystem::path target, const std::filesystem::path linkName) {
 
   if (symlink(target.c_str(), linkName.c_str()) != 0) {
-    std::cerr << "Failed to create symbolic link " << target << " -> " << linkName << std::endl;
+    LOGFILE << "[E] Failed to create symbolic link " << target.c_str() << " -> " << linkName.c_str() << std::endl;
     return false;
   }
   return true;
@@ -334,7 +334,7 @@ bool linkDirectory (const std::filesystem::path target, const std::filesystem::p
   wcscat(szTarget, L"\\");
 
   if (!CreateDirectoryW(szJunction, NULL)) {
-    std::cerr << "Failed to create directory for junction " << linkName << ": " << GetLastError() << std::endl;
+    LOGFILE << "[E] Failed to create directory for junction " << linkName.c_str() << ": " << GetLastError() << std::endl;
     return false;
   }
 
@@ -342,24 +342,24 @@ bool linkDirectory (const std::filesystem::path target, const std::filesystem::p
   HANDLE hToken = NULL;
   TOKEN_PRIVILEGES tp;
   if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &hToken)) {
-    std::cerr << "Failed to open process token: " << GetLastError() << std::endl;
+    LOGFILE << "[E] Failed to open process token: " << GetLastError() << std::endl;
     return false;
   }
   if (!LookupPrivilegeValue(NULL, SE_RESTORE_NAME, &tp.Privileges[0].Luid)) {
-    std::cerr << "Failed to look up SE_RESTORE_NAME privilege: " << GetLastError() << std::endl;
+    LOGFILE << "[E] Failed to look up SE_RESTORE_NAME privilege: " << GetLastError() << std::endl;
     return false;
   }
   tp.PrivilegeCount = 1;
   tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
   if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL)) {
-    std::cerr << "Failed to adjust process privileges: " << GetLastError() << std::endl;
+    LOGFILE << "[E] Failed to adjust process privileges: " << GetLastError() << std::endl;
     return false;
   }
   if (hToken) CloseHandle(hToken);
 
   HANDLE hDir = CreateFileW(szJunction, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
   if (hDir == INVALID_HANDLE_VALUE) {
-    std::cerr << "Failed to create junction file " << linkName << ": " << GetLastError() << std::endl;
+    LOGFILE << "[E] Failed to create junction file " << linkName.c_str() << ": " << GetLastError() << std::endl;
     return false;
   }
 
@@ -380,7 +380,7 @@ bool linkDirectory (const std::filesystem::path target, const std::filesystem::p
     CloseHandle(hDir);
     RemoveDirectoryW(szJunction);
 
-    std::cerr << "Failed to create reparse point " << target << " -> " << linkName << ": " << dr << std::endl;
+    LOGFILE << "[E] Failed to create reparse point " << target.c_str() << " -> " << linkName.c_str() << ": " << dr << std::endl;
     return false;
   }
 
@@ -395,7 +395,7 @@ bool linkDirectory (const std::filesystem::path target, const std::filesystem::p
 bool linkFile (const std::filesystem::path target, const std::filesystem::path linkName) {
 
   if (symlink(target.c_str(), linkName.c_str()) != 0) {
-    std::cerr << "Failed to create symbolic link " << target << " -> " << linkName << std::endl;
+    LOGFILE << "[E] Failed to create symbolic link " << target.c_str() << " -> " << linkName.c_str() << std::endl;
     return false;
   }
   return true;
@@ -412,7 +412,7 @@ bool linkFile (const std::filesystem::path target, const std::filesystem::path l
   BOOL result = CreateHardLinkW(linkNameWStr.c_str(), targetWStr.c_str(), NULL);
 
   if (result == 0) {
-    std::cerr << "Failed to create hard link " << target << " -> " << linkName << ": " << GetLastError() << std::endl;
+    LOGFILE << "[E] Failed to create hard link " << target.c_str() << " -> " << linkName.c_str() << ": " << GetLastError() << std::endl;
     return false;
   }
   return true;
@@ -425,7 +425,7 @@ bool linkFile (const std::filesystem::path target, const std::filesystem::path l
 bool unlinkDirectory (const std::filesystem::path target) {
 
   if (unlink(target.c_str()) != 0) {
-    std::cerr << "Failed to remove symbolic link " << target << std::endl;
+    LOGFILE << "[E] Failed to remove symbolic link " << target.c_str() << std::endl;
     return false;
   }
   return true;
@@ -446,7 +446,7 @@ bool unlinkDirectory (const std::filesystem::path target) {
   if (success) {
     return true;
   } else {
-    std::cerr << "Failed to remove junction " << target << ": " << GetLastError() << std::endl;
+    LOGFILE << "[E] Failed to remove junction " << target.c_str() << ": " << GetLastError() << std::endl;
     return false;
   }
 
@@ -458,7 +458,7 @@ bool isDirectoryLink (const std::filesystem::path linkName) {
 
   struct stat path_stat;
   if (lstat(linkName.c_str(), &path_stat) != 0) {
-    std::cerr << "Failed to stat path " << linkName << std::endl;
+    LOGFILE << "[E] Failed to stat path " << linkName.c_str() << std::endl;
     return false;
   }
   return S_ISLNK(path_stat.st_mode);
@@ -470,7 +470,7 @@ bool isDirectoryLink (const std::filesystem::path linkName) {
   DWORD attributes = GetFileAttributesW(linkName.wstring().c_str());
 
   if (attributes == INVALID_FILE_ATTRIBUTES) {
-    std::cerr << "Failed to get file attributes for " << linkName << std::endl;
+    LOGFILE << "[E] Failed to get file attributes for " << linkName.c_str() << std::endl;
     return false;
   }
 
@@ -534,7 +534,7 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
 #endif
 
   GAME_DIR = std::filesystem::path(gameProcessPath).parent_path();
-  std::cout << "Found Portal 2 at " << GAME_DIR << std::endl;
+  LOGFILE << "[I] Found Portal 2 at " << GAME_DIR.c_str() << std::endl;
 
   std::filesystem::path tempcontentPath = GAME_DIR / "portal2_tempcontent";
 

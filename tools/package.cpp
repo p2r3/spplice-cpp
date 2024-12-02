@@ -133,10 +133,10 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
 
   // Download the package file if we don't have a valid cache
   if (CACHE_ENABLE && validateFileVersion(filePath, package->version)) {
-    std::cout << "Cached package found, skipping download" << std::endl;
+    LOGFILE << "[I] Cached package found, skipping download" << std::endl;
   } else {
     if (CACHE_ENABLE && !updateFileVersion(filePath, package->version)) {
-      std::cout << "Couldn't open package version file for writing" << std::endl;
+      LOGFILE << "[W] Couldn't open package version file for writing" << std::endl;
     }
     if (!ToolsCURL::downloadFile(package->file, filePath)) {
       ToolsQT::displayErrorPopup("Installation aborted", "Failed to download package file.");

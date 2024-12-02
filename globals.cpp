@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <fstream>
 #include "globals.h"
 
 // Points to the system-specific designated cache directory
@@ -18,6 +19,8 @@ const std::filesystem::path APP_DIR = std::filesystem::path(std::getenv("APPDATA
 
 // Points to last known Portal 2 game files directory
 std::filesystem::path GAME_DIR;
+// Points to info/error log file (set during runtime)
+std::ofstream LOGFILE;
 
 // Points to the external repository file
 const std::filesystem::path REPO_PATH = APP_DIR / "repositories.txt";

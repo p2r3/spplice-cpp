@@ -43,7 +43,7 @@ bool ToolsCURL::downloadFile (const std::string &url, const std::filesystem::pat
   std::ofstream ofs(outputPath, std::ios::binary);
 
   if (!ofs.is_open()) {
-    std::cerr << "Failed to open file for writing: " << outputPath << std::endl;
+    LOGFILE << "[E] Failed to open file for writing: " << outputPath.c_str() << std::endl;
     return false;
   }
 
@@ -51,7 +51,7 @@ bool ToolsCURL::downloadFile (const std::string &url, const std::filesystem::pat
   CURL *curl = curl_easy_init();
 
   if (!curl) {
-    std::cerr << "Failed to initialize CURL" << std::endl;
+    LOGFILE << "[E] Failed to initialize CURL" << std::endl;
     return false;
   }
 
@@ -67,7 +67,7 @@ bool ToolsCURL::downloadFile (const std::string &url, const std::filesystem::pat
   curl_easy_cleanup(curl);
 
   if (response != CURLE_OK) {
-    std::cerr << "Failed to download file from \"" << url << "\": " << curl_easy_strerror(response) << std::endl;
+    LOGFILE << "[E] Failed to download file from \"" << url.c_str() << "\": " << curl_easy_strerror(response) << std::endl;
     return false;
   }
 
@@ -82,7 +82,7 @@ std::string ToolsCURL::downloadString (const std::string &url) {
   CURL *curl = curl_easy_init();
 
   if (!curl) {
-    std::cerr << "Failed to initialize CURL" << std::endl;
+    LOGFILE << "[E] Failed to initialize CURL" << std::endl;
     return "";
   }
 
@@ -99,7 +99,7 @@ std::string ToolsCURL::downloadString (const std::string &url) {
 
   // Check for errors
   if (response != CURLE_OK) {
-    std::cerr << "Failed to download string from \"" << url << "\": " << curl_easy_strerror(response) << std::endl;
+    LOGFILE << "[E] Failed to download string from \"" << url.c_str() << "\": " << curl_easy_strerror(response) << std::endl;
     return "";
   }
 
@@ -117,7 +117,7 @@ CURL* ToolsCURL::wsConnect (const std::string &url) {
   CURL *curl = curl_easy_init();
 
   if (!curl) {
-    std::cerr << "Failed to initialize CURL" << std::endl;
+    LOGFILE << "[E] Failed to initialize CURL" << std::endl;
     return nullptr;
   }
 
@@ -129,7 +129,7 @@ CURL* ToolsCURL::wsConnect (const std::string &url) {
 
   // Check for errors
   if (response != CURLE_OK) {
-    std::cerr << "Failed to connect to \"" << url << "\": " << curl_easy_strerror(response) << std::endl;
+    LOGFILE << "[E] Failed to connect to \"" << url.c_str() << "\": " << curl_easy_strerror(response) << std::endl;
     return nullptr;
   }
 
@@ -157,7 +157,7 @@ bool ToolsCURL::wsSend (CURL *curl, const std::string &message) {
 
   // Log errors, return false if response not OK
   if (response != CURLE_OK) {
-    std::cerr << "Failed to send message to WebSocket: " << curl_easy_strerror(response) << std::endl;
+    LOGFILE << "[E] Failed to send message to WebSocket: " << curl_easy_strerror(response) << std::endl;
     return false;
   }
 
@@ -180,7 +180,7 @@ std::string ToolsCURL::wsReceive (CURL *curl, size_t size) {
 
   // Log errors, return empty string if response not OK
   if (response != CURLE_OK) {
-    std::cerr << "Failed to receive message from WebSocket: " << curl_easy_strerror(response) << std::endl;
+    LOGFILE << "[E] Failed to receive message from WebSocket: " << curl_easy_strerror(response) << std::endl;
     return "";
   }
 
