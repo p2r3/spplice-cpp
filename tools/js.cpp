@@ -26,8 +26,13 @@
 // Contains all WebSockets created in the JS environment
 CURL *webSockets[MAX_WEBSOCKETS];
 
-// HACK: Read offset of the console.log file used for the Windows console workaround
-uint64_t consoleLogOffset = 0;
+// HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
+#ifdef TARGET_WINDOWS
+  // Read offset of the console.log file
+  uint64_t consoleLogOffset = 0;
+  // Portal 2 window handle
+  HWND gameWindow = NULL;
+#endif
 
 // Implements custom functions for the JavaScript context
 struct customJS {
@@ -158,10 +163,13 @@ struct customJS {
 // HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
 #ifdef TARGET_WINDOWS
       std::filesystem::path logPath = (GAME_DIR / "portal2") / "console.log";
+      // If the log file already exists, offset into it
       if (std::filesystem::exists(logPath)) {
         consoleLogOffset = std::filesystem::file_size(logPath);
       }
-      duk_push_number(ctx, 1);
+      // Ensure the game window exists and can receive commands
+      if (FindWindowA("Valve001", 0) == NULL) duk_push_number(ctx, -1);
+      else duk_push_number(ctx, 1);
       return 1;
 #endif
 
@@ -177,6 +185,7 @@ struct customJS {
 
 // HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
 #ifdef TARGET_WINDOWS
+      // Ignore all calls to game.disconnect
       return 0;
 #endif
 
@@ -193,18 +202,19 @@ struct customJS {
 
 // HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
 #ifdef TARGET_WINDOWS
-      const HWND m_hEngine = FindWindowA("Valve001", 0);
-      if (m_hEngine == NULL) {
+      // Ensure the game window exists
+      gameWindow = FindWindowA("Valve001", 0);
+      if (gameWindow == NULL) {
         LOGFILE << "[E] Failed to find engine window." << std::endl;
         return duk_generic_error(ctx, "game.send: Failed to send command");
       }
-
-      COPYDATASTRUCT m_cData;
-      m_cData.cbData = strlen(command) + 1;
-      m_cData.dwData = 0;
-      m_cData.lpData = (void *)command;
-
-      SendMessageA(m_hEngine, WM_COPYDATA, 0, (LPARAM)&m_cData);
+      // Create COPYDATA for sending the command
+      COPYDATASTRUCT data;
+      data.cbData = strlen(command) + 1;
+      data.dwData = 0;
+      data.lpData = (void *)command;
+      // Send the command to the window as a message
+      SendMessageA(gameWindow, WM_COPYDATA, 0, (LPARAM)&data);
       return 0;
 #endif
 
@@ -226,9 +236,10 @@ struct customJS {
 #ifdef TARGET_WINDOWS
       std::filesystem::path logPath = (GAME_DIR / "portal2") / "console.log";
 
-      // If no logfile exists yet, return empty string
+      // If no logfile exists, return empty string and reset seek offset
       if (!std::filesystem::exists(logPath)) {
         duk_push_string(ctx, "");
+        consoleLogOffset = 0;
         return 1;
       }
 
@@ -242,7 +253,7 @@ struct customJS {
       // Seek to the desired offset, return to start of file on failure
       file.seekg(consoleLogOffset);
       if (!file) {
-        LOGFILE << "[E] Failed to seek to offset: " << consoleLogOffset << std::endl;
+        LOGFILE << "[W] Failed to seek to offset: " << consoleLogOffset << std::endl;
         consoleLogOffset = 0;
         duk_push_string(ctx, "");
         return 1;
