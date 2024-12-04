@@ -7,7 +7,13 @@
 #include <thread>
 #include <chrono>
 #include <cstdlib>
+#include <csignal>
+#include <exception>
 #include <functional>
+// Platform specific includes
+#ifdef TARGET_WINDOWS
+  #include <windows.h>
+#endif
 // Main window dependencies
 #include <QApplication>
 #include <QCoreApplication>
@@ -112,6 +118,34 @@ void checkCacheOverride (const std::filesystem::path &configPath) {
   CACHE_DIR = std::filesystem::path(customCacheDir);
 
 }
+
+// Log fatal crashes to file and perform cleanup
+void crashHandler (const std::string &error, uint code) {
+  // Log the crash to file
+  LOGFILE << "[CRASH] Received " << error << " with code " << code << std::endl;
+  // Ensure no package is installed
+  ToolsInstall::uninstall();
+  // Terminate program with received exit code
+  std::exit(code);
+}
+
+// Redirect signals indicating program crash/termination
+void signalHandler (int signal) {
+  switch (signal) {
+    case 11: crashHandler("SIGSEGV", signal);
+    case 6: crashHandler("SIGABRT", signal);
+    case 2: crashHandler("SIGINT", signal);
+  }
+  crashHandler("Unknown Signal", signal);
+}
+
+#ifdef TARGET_WINDOWS
+// Handles low-level exceptions on Windows
+LONG WINAPI windowsExceptionHandler (EXCEPTION_POINTERS* info) {
+  crashHandler("Windows Exception", (uint)(info->ExceptionRecord->ExceptionCode));
+  return EXCEPTION_EXECUTE_HANDLER;
+}
+#endif
 
 // A link to the index for the global Spplice repository
 const std::string globalRepository = "https://p2r3.github.io/spplice-repo/index.json";
@@ -308,10 +342,24 @@ int main (int argc, char *argv[]) {
 
   // Clean up CURL on program termination
   std::atexit(ToolsCURL::cleanup);
-
   // Ensure that no package is installed if Portal 2 is running when exiting Spplice
   std::atexit(ToolsInstall::uninstall);
 
-  return app.exec();
+  // Register signal handlers to perform cleanup on crashes
+  std::signal(SIGSEGV, signalHandler);
+  std::signal(SIGABRT, signalHandler);
+  std::signal(SIGINT,  signalHandler);
+
+#ifdef TARGET_WINDOWS
+  // Register Windows low-level exception handler
+  SetUnhandledExceptionFilter(windowsExceptionHandler);
+#endif
+
+  try {
+    return app.exec();
+  } catch (const std::exception &e) {
+    // Handle fatal runtime exceptions
+    crashHandler(std::string(e.what()), 1);
+  }
 
 }
