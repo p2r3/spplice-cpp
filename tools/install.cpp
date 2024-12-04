@@ -584,6 +584,30 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
 
 }
 
+// Kills any running Portal 2 process if install state is non-zero
+bool ToolsInstall::killPortal2 () {
+
+  // If no package is installed, do nothing
+  if (SPPLICE_INSTALL_STATE == 0) return false;
+
+  // Use a platform-specific command string for killing the process
+#ifndef TARGET_WINDOWS
+  const std::string command = "pkill -e portal2_linux -9";
+#else
+  const std::string command = "taskkill /F /T /IM portal2.exe";
+#endif
+
+  int result = std::system(command.c_str());
+  if (result != 0) {
+    LOGFILE << "[E] Failed to kill Portal 2. Error code: " << result << std::endl;
+    return false;
+  } else {
+    LOGFILE << "[I] Killed Portal 2." << std::endl;
+    return true;
+  }
+
+}
+
 void ToolsInstall::uninstall () {
 
   // If no package is installed, do nothing

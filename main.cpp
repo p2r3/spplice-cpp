@@ -125,6 +125,8 @@ void crashHandler (const std::string &error, uint code) {
   LOGFILE << "[CRASH] Received " << error << " with code " << code << std::endl;
   // Ensure no package is installed
   ToolsInstall::uninstall();
+  // Kill the game if needed
+  ToolsInstall::killPortal2();
   // Terminate program with received exit code
   std::exit(code);
 }
@@ -342,8 +344,13 @@ int main (int argc, char *argv[]) {
 
   // Clean up CURL on program termination
   std::atexit(ToolsCURL::cleanup);
-  // Ensure that no package is installed if Portal 2 is running when exiting Spplice
-  std::atexit(ToolsInstall::uninstall);
+  // Perform Portal 2 cleanup if needed
+  std::atexit([]() {
+    // Ensure that no package is installed on exit
+    ToolsInstall::uninstall();
+    // Kill the game on exit if a package is installed
+    ToolsInstall::killPortal2();
+  });
 
   // Register signal handlers to perform cleanup on crashes
   std::signal(SIGSEGV, signalHandler);
