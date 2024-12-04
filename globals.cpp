@@ -29,3 +29,6 @@ const std::filesystem::path REPO_PATH = APP_DIR / "repositories.txt";
 int SPPLICE_INSTALL_STATE = 0; // 0 - idle; 1 - installing; 2 - installed
 // TCP communication port between Portal 2 and Spplice (set during runtime)
 int SPPLICE_NETCON_PORT = -1;
+
+// Holds the current version's GitHub tag for automatic updates
+const std::string SPPLICE_VERSION_TAG = "v0.6.3-alpha";

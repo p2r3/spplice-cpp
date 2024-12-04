@@ -69,6 +69,7 @@ add_executable(SppliceCPP
   main.cpp
   globals.cpp
   tools/curl.cpp
+  tools/update.cpp
   tools/qt.cpp
   tools/install.cpp
   tools/package.cpp

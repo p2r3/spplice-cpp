@@ -15,5 +15,6 @@ extern std::ofstream LOGFILE;
 extern const std::filesystem::path REPO_PATH;
 extern int SPPLICE_INSTALL_STATE;
 extern int SPPLICE_NETCON_PORT;
+extern const std::string SPPLICE_VERSION_TAG;
 
 #endif

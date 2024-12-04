@@ -36,6 +36,7 @@
 #include "tools/install.h"
 #include "tools/package.h"
 #include "tools/repo.h"
+#include "tools/update.h"
 
 // Fetch and display packages from the given repository URL asynchronously
 void displayRepository (const std::string &url, const std::string &last, QVBoxLayout *container) {
@@ -162,6 +163,7 @@ int main (int argc, char *argv[]) {
   }
   // Open the log file
   LOGFILE = std::ofstream(APP_DIR / "log.txt");
+  LOGFILE << "Spplice " << SPPLICE_VERSION_TAG << std::endl;
 
   // Check for a CACHE_DIR override in cache_dir.txt
   checkCacheOverride(APP_DIR / "cache_dir.txt");
@@ -192,6 +194,9 @@ int main (int argc, char *argv[]) {
 
   // Initialize CURL
   ToolsCURL::init();
+
+  // Check for updates on a separate thread
+  std::thread(ToolsUpdate::installUpdate).detach();
 
   QVBoxLayout *packageContainer = windowUI.PackageListLayout;
 
