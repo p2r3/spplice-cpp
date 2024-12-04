@@ -60,7 +60,7 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
     std::filesystem::path full_path = dest / archive_entry_pathname(entry);
     archive_entry_set_pathname_utf8(entry, full_path.string().c_str());
 
-    LOGFILE << "[I] Extracting: " << archive_entry_pathname(entry) << std::endl;
+    LOGFILE << "[I] Extracting: " << '"' << archive_entry_pathname(entry) << '"' << std::endl;
     archive_write_header(extracted, entry);
 
     const void* buff;
@@ -301,7 +301,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
 bool linkDirectory (const std::filesystem::path target, const std::filesystem::path linkName) {
 
   if (symlink(target.c_str(), linkName.c_str()) != 0) {
-    LOGFILE << "[E] Failed to create symbolic link " << target.c_str() << " -> " << linkName.c_str() << std::endl;
+    LOGFILE << "[E] Failed to create symbolic link " << target << " -> " << linkName << std::endl;
     return false;
   }
   return true;
@@ -334,7 +334,7 @@ bool linkDirectory (const std::filesystem::path target, const std::filesystem::p
   wcscat(szTarget, L"\\");
 
   if (!CreateDirectoryW(szJunction, NULL)) {
-    LOGFILE << "[E] Failed to create directory for junction " << linkName.c_str() << ": " << GetLastError() << std::endl;
+    LOGFILE << "[E] Failed to create directory for junction " << linkName << ": ERRNO " << GetLastError() << std::endl;
     return false;
   }
 
@@ -359,7 +359,7 @@ bool linkDirectory (const std::filesystem::path target, const std::filesystem::p
 
   HANDLE hDir = CreateFileW(szJunction, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
   if (hDir == INVALID_HANDLE_VALUE) {
-    LOGFILE << "[E] Failed to create junction file " << linkName.c_str() << ": " << GetLastError() << std::endl;
+    LOGFILE << "[E] Failed to create junction file \"" << linkName << "\": ERRNO " << GetLastError() << std::endl;
     return false;
   }
 
@@ -380,7 +380,7 @@ bool linkDirectory (const std::filesystem::path target, const std::filesystem::p
     CloseHandle(hDir);
     RemoveDirectoryW(szJunction);
 
-    LOGFILE << "[E] Failed to create reparse point " << target.c_str() << " -> " << linkName.c_str() << ": " << dr << std::endl;
+    LOGFILE << "[E] Failed to create reparse point " << target << " -> " << linkName << ": ERRNO " << dr << std::endl;
     return false;
   }
 
@@ -395,7 +395,7 @@ bool linkDirectory (const std::filesystem::path target, const std::filesystem::p
 bool linkFile (const std::filesystem::path target, const std::filesystem::path linkName) {
 
   if (symlink(target.c_str(), linkName.c_str()) != 0) {
-    LOGFILE << "[E] Failed to create symbolic link " << target.c_str() << " -> " << linkName.c_str() << std::endl;
+    LOGFILE << "[E] Failed to create symbolic link " << target << " -> " << linkName << std::endl;
     return false;
   }
   return true;
@@ -412,7 +412,7 @@ bool linkFile (const std::filesystem::path target, const std::filesystem::path l
   BOOL result = CreateHardLinkW(linkNameWStr.c_str(), targetWStr.c_str(), NULL);
 
   if (result == 0) {
-    LOGFILE << "[E] Failed to create hard link " << target.c_str() << " -> " << linkName.c_str() << ": " << GetLastError() << std::endl;
+    LOGFILE << "[E] Failed to create hard link " << target << " -> " << linkName << ": ERRNO " << GetLastError() << std::endl;
     return false;
   }
   return true;
@@ -425,7 +425,7 @@ bool linkFile (const std::filesystem::path target, const std::filesystem::path l
 bool unlinkDirectory (const std::filesystem::path target) {
 
   if (unlink(target.c_str()) != 0) {
-    LOGFILE << "[E] Failed to remove symbolic link " << target.c_str() << std::endl;
+    LOGFILE << "[E] Failed to remove symbolic link " << target << std::endl;
     return false;
   }
   return true;
@@ -446,7 +446,7 @@ bool unlinkDirectory (const std::filesystem::path target) {
   if (success) {
     return true;
   } else {
-    LOGFILE << "[E] Failed to remove junction " << target.c_str() << ": " << GetLastError() << std::endl;
+    LOGFILE << "[E] Failed to remove junction " << target << ": ERRNO " << GetLastError() << std::endl;
     return false;
   }
 
@@ -458,7 +458,7 @@ bool isDirectoryLink (const std::filesystem::path linkName) {
 
   struct stat path_stat;
   if (lstat(linkName.c_str(), &path_stat) != 0) {
-    LOGFILE << "[E] Failed to stat path " << linkName.c_str() << std::endl;
+    LOGFILE << "[E] Failed to stat path " << linkName << std::endl;
     return false;
   }
   return S_ISLNK(path_stat.st_mode);
@@ -470,7 +470,7 @@ bool isDirectoryLink (const std::filesystem::path linkName) {
   DWORD attributes = GetFileAttributesW(linkName.wstring().c_str());
 
   if (attributes == INVALID_FILE_ATTRIBUTES) {
-    LOGFILE << "[E] Failed to get file attributes for " << linkName.c_str() << std::endl;
+    LOGFILE << "[E] Failed to get file attributes for " << linkName << std::endl;
     return false;
   }
 
@@ -534,7 +534,7 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
 #endif
 
   GAME_DIR = std::filesystem::path(gameProcessPath).parent_path();
-  LOGFILE << "[I] Found Portal 2 at " << GAME_DIR.c_str() << std::endl;
+  LOGFILE << "[I] Found Portal 2 at " << GAME_DIR << std::endl;
 
   std::filesystem::path tempcontentPath = GAME_DIR / "portal2_tempcontent";
 

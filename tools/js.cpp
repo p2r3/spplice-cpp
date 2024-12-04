@@ -43,7 +43,7 @@ struct customJS {
 
       int argc = duk_get_top(ctx);
 
-      LOGFILE << "[JS I] " << std::endl;
+      LOGFILE << "[JS I] ";
       for (int i = 0; i < argc; i ++) {
         const char *str = duk_to_string(ctx, i);
         if (str) LOGFILE << str << " " << std::endl;
@@ -57,7 +57,7 @@ struct customJS {
 
       int argc = duk_get_top(ctx);
 
-      LOGFILE << "[JS E] " << std::endl;
+      LOGFILE << "[JS E] ";
       for (int i = 0; i < argc; i ++) {
         const char *str = duk_to_string(ctx, i);
         if (str) LOGFILE << str << " ";
@@ -246,7 +246,7 @@ struct customJS {
       // Open the file in binary mode
       std::ifstream file(logPath, std::ios::binary);
       if (!file) {
-        LOGFILE << "[E] Failed to open file: " << logPath.c_str() << std::endl;
+        LOGFILE << "[E] Failed to open file: " << logPath << std::endl;
         return duk_generic_error(ctx, "game.read: Failed to read from socket");
       }
 
@@ -406,7 +406,7 @@ void ToolsJS::runFile (const std::filesystem::path &filePath) {
 
   // Check if the input file exists
   if (!std::filesystem::exists(filePath)) {
-    LOGFILE << "[E] JavaScript file " << filePath.c_str() << " not found." << std::endl;
+    LOGFILE << "[E] JavaScript file " << filePath << " not found." << std::endl;
     return;
   }
 
@@ -476,7 +476,7 @@ void ToolsJS::runFile (const std::filesystem::path &filePath) {
   const std::string code = fileBuffer.str();
   duk_push_lstring(ctx, code.c_str(), code.length());
   if (duk_peval(ctx) != 0) {
-    LOGFILE << "[E] [" << filePath.c_str() << "] " << duk_safe_to_string(ctx, -1) << std::endl;
+    LOGFILE << "[E] [" << filePath << "] " << duk_safe_to_string(ctx, -1) << std::endl;
   }
 
   // Clean up the context

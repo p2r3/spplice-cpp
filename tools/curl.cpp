@@ -43,7 +43,7 @@ bool ToolsCURL::downloadFile (const std::string &url, const std::filesystem::pat
   std::ofstream ofs(outputPath, std::ios::binary);
 
   if (!ofs.is_open()) {
-    LOGFILE << "[E] Failed to open file for writing: " << outputPath.c_str() << std::endl;
+    LOGFILE << "[E] Failed to open file for writing: " << outputPath << std::endl;
     return false;
   }
 
@@ -67,7 +67,7 @@ bool ToolsCURL::downloadFile (const std::string &url, const std::filesystem::pat
   curl_easy_cleanup(curl);
 
   if (response != CURLE_OK) {
-    LOGFILE << "[E] Failed to download file from \"" << url.c_str() << "\": " << curl_easy_strerror(response) << std::endl;
+    LOGFILE << "[E] Failed to download file from \"" << url << "\": " << curl_easy_strerror(response) << std::endl;
     return false;
   }
 
@@ -99,7 +99,7 @@ std::string ToolsCURL::downloadString (const std::string &url) {
 
   // Check for errors
   if (response != CURLE_OK) {
-    LOGFILE << "[E] Failed to download string from \"" << url.c_str() << "\": " << curl_easy_strerror(response) << std::endl;
+    LOGFILE << "[E] Failed to download string from \"" << url << "\": " << curl_easy_strerror(response) << std::endl;
     return "";
   }
 
@@ -129,7 +129,7 @@ CURL* ToolsCURL::wsConnect (const std::string &url) {
 
   // Check for errors
   if (response != CURLE_OK) {
-    LOGFILE << "[E] Failed to connect to \"" << url.c_str() << "\": " << curl_easy_strerror(response) << std::endl;
+    LOGFILE << "[E] Failed to connect to \"" << url << "\": " << curl_easy_strerror(response) << std::endl;
     return nullptr;
   }
 

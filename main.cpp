@@ -96,7 +96,7 @@ void checkCacheOverride (const std::filesystem::path &configPath) {
 
   std::ifstream configFile(configPath);
   if (!configFile.is_open()) {
-    std::cerr << "[E] Failed to open " << configPath.c_str() << " for reading." << std::endl;
+    std::cerr << "[E] Failed to open " << configPath << " for reading." << std::endl;
     return;
   }
 
@@ -105,7 +105,7 @@ void checkCacheOverride (const std::filesystem::path &configPath) {
   configFile.close();
 
   if (!std::filesystem::exists(customCacheDir)) {
-    std::cerr << "[E] Invalid cache directory " << customCacheDir.c_str() << "." << std::endl;
+    std::cerr << "[E] Invalid cache directory " << customCacheDir << "." << std::endl;
     return;
   }
 
@@ -118,25 +118,25 @@ const std::string globalRepository = "https://p2r3.github.io/spplice-repo/index.
 
 int main (int argc, char *argv[]) {
 
+  try { // Ensure APP_DIR exists
+    std::filesystem::create_directories(APP_DIR);
+  } catch (const std::filesystem::filesystem_error& e) {
+    std::cerr << "Failed to create application directory " << APP_DIR << ": " << e.what() << std::endl;
+    return 1;
+  }
+  // Open the log file
+  LOGFILE = std::ofstream(APP_DIR / "log.txt");
+
   // Check for a CACHE_DIR override in cache_dir.txt
   checkCacheOverride(APP_DIR / "cache_dir.txt");
-
   // Check if caching has been disabled
   CACHE_ENABLE = !std::filesystem::exists(APP_DIR / "disable_cache");
 
   try { // Ensure CACHE_DIR exists
     std::filesystem::create_directories(CACHE_DIR);
   } catch (const std::filesystem::filesystem_error& e) {
-    std::cerr << "[E] Failed to create temporary directory " << CACHE_DIR.c_str() << ": " << e.what() << std::endl;
+    LOGFILE << "[E] Failed to create temporary directory " << CACHE_DIR << ": " << e.what() << std::endl;
   }
-
-  try { // Ensure APP_DIR exists
-    std::filesystem::create_directories(APP_DIR);
-  } catch (const std::filesystem::filesystem_error& e) {
-    std::cerr << "[E] Failed to create application directory " << APP_DIR.c_str() << ": " << e.what() << std::endl;
-  }
-  // Open the log file
-  LOGFILE = std::ofstream(APP_DIR / "log.txt");
 
   // Set up high-DPI scaling
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
