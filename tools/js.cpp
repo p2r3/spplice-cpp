@@ -76,7 +76,14 @@ struct customJS {
       const char *path = duk_to_string(ctx, 0);
       if (!path) return duk_type_error(ctx, "fs.mkdir: Invalid path argument");
 
-      const std::filesystem::path fullPath = CACHE_DIR / "tempcontent" / path;
+      // Normalize base path and input path
+      const std::filesystem::path basePath = std::filesystem::canonical(CACHE_DIR / "tempcontent");
+      const std::filesystem::path fullPath = std::filesystem::canonical(basePath / path);
+      // Check for path traversal
+      if (fullPath.string().find(basePath.string()) != 0) {
+        return duk_generic_error(ctx, "fs.mkdir: Path traversal detected");
+      }
+
       if (std::filesystem::exists(fullPath)) return duk_generic_error(ctx, "fs.mkdir: Path already exists");
 
       std::filesystem::create_directories(fullPath);
@@ -88,7 +95,14 @@ struct customJS {
       const char *path = duk_to_string(ctx, 0);
       if (!path) return duk_type_error(ctx, "fs.unlink: Invalid path argument");
 
-      const std::filesystem::path fullPath = CACHE_DIR / "tempcontent" / path;
+      // Normalize base path and input path
+      const std::filesystem::path basePath = std::filesystem::canonical(CACHE_DIR / "tempcontent");
+      const std::filesystem::path fullPath = std::filesystem::canonical(basePath / path);
+      // Check for path traversal
+      if (fullPath.string().find(basePath.string()) != 0) {
+        return duk_generic_error(ctx, "fs.unlink: Path traversal detected");
+      }
+
       if (!std::filesystem::exists(fullPath)) return duk_generic_error(ctx, "fs.unlink: Path does not exist");
 
       if (std::filesystem::is_directory(fullPath)) {
@@ -104,7 +118,15 @@ struct customJS {
       const char *path = duk_to_string(ctx, 0);
       if (!path) return duk_type_error(ctx, "fs.read: Invalid path argument");
 
-      const std::filesystem::path fullPath = CACHE_DIR / "tempcontent" / path;
+      // Normalize base path and input path
+      // For fs.read, the base path is GAME_DIR to allow for reading other game files
+      const std::filesystem::path basePath = std::filesystem::canonical(GAME_DIR);
+      const std::filesystem::path fullPath = std::filesystem::canonical((basePath / "tempcontent") / path);
+      // Check for path traversal
+      if (fullPath.string().find(basePath.string()) != 0) {
+        return duk_generic_error(ctx, "fs.read: Path traversal detected");
+      }
+
       if (!std::filesystem::exists(fullPath)) return duk_generic_error(ctx, "fs.read: File does not exist");
       if (!std::filesystem::is_regular_file(fullPath)) return duk_generic_error(ctx, "fs.read: Path is not a file");
 
@@ -125,7 +147,14 @@ struct customJS {
       if (!path) return duk_type_error(ctx, "fs.write: Invalid path argument");
       if (!contents) return duk_type_error(ctx, "fs.write: Invalid contents argument");
 
-      const std::filesystem::path fullPath = CACHE_DIR / "tempcontent" / path;
+      // Normalize base path and input path
+      const std::filesystem::path basePath = std::filesystem::canonical(CACHE_DIR / "tempcontent");
+      const std::filesystem::path fullPath = std::filesystem::canonical(basePath / path);
+      // Check for path traversal
+      if (fullPath.string().find(basePath.string()) != 0) {
+        return duk_generic_error(ctx, "fs.write: Path traversal detected");
+      }
+
       if (std::filesystem::exists(fullPath) && !std::filesystem::is_regular_file(fullPath)) {
         return duk_generic_error(ctx, "fs.write: Path already exists and is not a file");
       }
@@ -144,13 +173,22 @@ struct customJS {
       if (!oldPath) return duk_type_error(ctx, "fs.rename: Invalid oldPath argument");
       if (!newPath) return duk_type_error(ctx, "fs.rename: Invalid newPath argument");
 
-      const std::filesystem::path fullPathOld = CACHE_DIR / "tempcontent" / oldPath;
-      const std::filesystem::path fullPathNew = CACHE_DIR / "tempcontent" / newPath;
+      // Normalize base path and input paths
+      const std::filesystem::path basePath = std::filesystem::canonical(CACHE_DIR / "tempcontent");
+      const std::filesystem::path fullPathOld = std::filesystem::canonical(basePath / oldPath);
+      const std::filesystem::path fullPathNew = std::filesystem::canonical(basePath / newPath);
+      // Check for path traversal
+      if (
+        fullPathOld.string().find(basePath.string()) != 0 ||
+        fullPathNew.string().find(basePath.string()) != 0
+      ) {
+        return duk_generic_error(ctx, "fs.rename: Path traversal detected");
+      }
 
-      if (!std::filesystem::exists(oldPath)) return duk_generic_error(ctx, "fs.rename: Path does not exist");
-      if (std::filesystem::exists(newPath)) return duk_generic_error(ctx, "fs.rename: New path already occupied");
+      if (!std::filesystem::exists(fullPathOld)) return duk_generic_error(ctx, "fs.rename: Path does not exist");
+      if (std::filesystem::exists(fullPathNew)) return duk_generic_error(ctx, "fs.rename: New path already occupied");
 
-      std::filesystem::rename(oldPath, newPath);
+      std::filesystem::rename(fullPathOld, fullPathNew);
       return 0;
 
     }
