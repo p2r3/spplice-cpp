@@ -134,9 +134,9 @@ void crashHandler (const std::string &error, uint code) {
 // Redirect signals indicating program crash/termination
 void signalHandler (int signal) {
   switch (signal) {
-    case 11: crashHandler("SIGSEGV", signal);
-    case 6: crashHandler("SIGABRT", signal);
-    case 2: crashHandler("SIGINT", signal);
+    case SIGSEGV: crashHandler("SIGSEGV", signal);
+    case SIGABRT: crashHandler("SIGABRT", signal);
+    case SIGINT:  crashHandler("SIGINT", signal);
   }
   crashHandler("Unknown Signal", signal);
 }
