@@ -337,9 +337,11 @@ int main (int argc, char *argv[]) {
 
   // Load additional repositories from file
   std::vector<std::string> repositories = ToolsRepo::readFromFile();
-  for (const std::string &url : repositories) {
-    displayRepository(url, lastRepository, packageContainer);
-    lastRepository = url;
+  for (int i = 0; i < repositories.size(); i ++) {
+    displayRepository(repositories.at(i), lastRepository, packageContainer);
+    lastRepository = repositories.at(i);
+    // Sleep for 20ms on each repository to reduce strain on the network
+    std::this_thread::sleep_for(std::chrono::milliseconds(20 * i));
   }
 
   // Clean up CURL on program termination
