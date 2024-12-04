@@ -60,6 +60,7 @@ bool ToolsCURL::downloadFile (const std::string &url, const std::filesystem::pat
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlFileWriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ofs);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl, CURLOPT_USERAGENT, "spplice/3.0");
 
   CURLcode response = curl_easy_perform(curl);
 
@@ -93,6 +94,7 @@ std::string ToolsCURL::downloadString (const std::string &url) {
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlStringWriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl, CURLOPT_USERAGENT, "spplice/3.0");
 
   // Perform the request
   CURLcode response = curl_easy_perform(curl);
