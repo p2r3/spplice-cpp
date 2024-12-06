@@ -59,7 +59,7 @@ void ToolsRepo::writeToFile (const std::string &url) {
 
   // Append the URL to the end of the file
   if (file.is_open()) {
-    file << url;
+    file << url << std::endl;
     file.close();
   } else {
     LOGFILE << "[E] Failed to open " << REPO_PATH << " for writing." << std::endl;
@@ -134,7 +134,7 @@ void ToolsRepo::removeFromFile (const std::string &url) {
   std::string line;
   while (std::getline(file, line)) {
     if (line == url) continue;
-    tempFile << line;
+    tempFile << line << std::endl;
   }
 
   file.close();
