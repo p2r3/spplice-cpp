@@ -74,7 +74,7 @@ std::vector<std::string> ToolsRepo::readFromFile () {
 
   // Check if the file exists
   if (!std::filesystem::exists(REPO_PATH)) {
-    LOGFILE << REPO_PATH << " does not exist, creating it..." << std::endl;
+    LOGFILE << "[I] " << REPO_PATH << " does not exist, creating it..." << std::endl;
 
     // If it doesn't, write a blank file and exit
     std::ofstream file(REPO_PATH);
@@ -109,7 +109,7 @@ void ToolsRepo::removeFromFile (const std::string &url) {
 
   // Check if the file exists
   if (!std::filesystem::exists(REPO_PATH)) {
-    LOGFILE << REPO_PATH << " does not exist." << std::endl;
+    LOGFILE << "[E] " << REPO_PATH << " does not exist." << std::endl;
     return;
   }
 
