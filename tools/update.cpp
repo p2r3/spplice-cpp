@@ -20,7 +20,7 @@
 #ifndef TARGET_WINDOWS
   const std::string updateBinary = "SppliceCPP";
 #else
-  const std::string updateBinary = "autoupdate";
+  const std::string updateBinary = "_autoupdate";
 #endif
 
 std::filesystem::path getExecutablePath () {
