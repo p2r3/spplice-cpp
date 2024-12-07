@@ -61,6 +61,8 @@ Source: "..\dist\win32\Qt5Core.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\win32\Qt5Gui.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\win32\Qt5Widgets.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\win32\platforms\qwindows.dll"; DestDir: "{app}\platforms"; Flags: ignoreversion
+Source: "..\dist\win32\imageformats\qico.dll"; DestDir: "{app}\imageformats"; Flags: ignoreversion
+Source: "..\dist\win32\imageformats\qjpeg.dll"; DestDir: "{app}\imageformats"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]
