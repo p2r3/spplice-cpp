@@ -122,6 +122,17 @@ void ToolsUpdate::installUpdate () {
     LOGFILE << "[E] Failed to replace executable post-update: " << e.what() << std::endl;
     return;
   }
+  // Ensure new file is executable
+  try {
+    std::filesystem::permissions(executablePath,
+      std::filesystem::perms::owner_exec |
+      std::filesystem::perms::group_exec |
+      std::filesystem::perms::others_exec,
+      std::filesystem::perm_options::add);
+    LOGFILE << "[I] Set file permissions for " << executablePath << " to executable" << std::endl;
+  } catch (const std::filesystem::filesystem_error& e) {
+    LOGFILE << "[W] Failed to set file permissions for " << executablePath << ": " << e.what() << std::endl;
+  }
   QMessageBox::information(nullptr, "Spplice Update",
     "Spplice has been updated.\nRestart Spplice to apply the changes.");
 #endif
