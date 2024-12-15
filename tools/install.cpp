@@ -562,6 +562,7 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
     std::filesystem::remove_all(tmpPackageDirectory);
     return "Failed to link package files to portal2_tempcontent.";
   }
+  LOGFILE << "[I] Linked " << tmpPackageDirectory << " to " << tempcontentPath << std::endl;
 
   const std::filesystem::path soundcacheSourcePath = GAME_DIR / "portal2" / "maps" / "soundcache" / "_master.cache";
   const std::filesystem::path soundcacheDestPath = tempcontentPath / "maps" / "soundcache" / "_master.cache";
@@ -569,17 +570,22 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
   // Link the soundcache from base Portal 2 to skip waiting for it to generate
   if (!linkFile(soundcacheSourcePath, soundcacheDestPath)) {
     // If linking the soundcache failed, copy it instead
+    LOGFILE << "[W] Failed to link soundcache file, copying instead" << std::endl;
     std::filesystem::copy_file(soundcacheSourcePath, soundcacheDestPath);
+  } else {
+    LOGFILE << "[I] Linked soundcache file" << std::endl;
   }
 
   // Run the JS API entrypoint (if one exists) on a detached thread
   if (jsEntryPointExists) {
+    LOGFILE << "[I] Running JavaScript API entrypoint file" << std::endl;
     std::thread ([jsEntryPoint]() {
       ToolsJS::runFile(jsEntryPoint);
     }).detach();
   }
 
   // Report install success to the UI
+  LOGFILE << "[I] Installation of " << packageFile << " completed" << std::endl;
   return "";
 
 }
