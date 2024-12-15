@@ -580,7 +580,11 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
   if (jsEntryPointExists) {
     LOGFILE << "[I] Running JavaScript API entrypoint file" << std::endl;
     std::thread ([jsEntryPoint]() {
-      ToolsJS::runFile(jsEntryPoint);
+      try {
+        ToolsJS::runFile(jsEntryPoint);
+      } catch (const std::exception &e) {
+        LOGFILE << "[E] Fatal JS API exception: " << std::string(e.what()) << std::endl;
+      }
     }).detach();
   }
 
