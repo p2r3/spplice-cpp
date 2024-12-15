@@ -77,8 +77,8 @@ struct customJS {
       if (!path) return duk_type_error(ctx, "fs.mkdir: Invalid path argument");
 
       // Normalize base path and input path
-      const std::filesystem::path basePath = std::filesystem::canonical(CACHE_DIR / "tempcontent");
-      const std::filesystem::path fullPath = std::filesystem::canonical(basePath / path);
+      const std::filesystem::path basePath = std::filesystem::absolute(CACHE_DIR / "tempcontent");
+      const std::filesystem::path fullPath = std::filesystem::absolute(basePath / path);
       // Check for path traversal
       if (fullPath.string().find(basePath.string()) != 0) {
         return duk_generic_error(ctx, "fs.mkdir: Path traversal detected");
@@ -96,8 +96,8 @@ struct customJS {
       if (!path) return duk_type_error(ctx, "fs.unlink: Invalid path argument");
 
       // Normalize base path and input path
-      const std::filesystem::path basePath = std::filesystem::canonical(CACHE_DIR / "tempcontent");
-      const std::filesystem::path fullPath = std::filesystem::canonical(basePath / path);
+      const std::filesystem::path basePath = std::filesystem::absolute(CACHE_DIR / "tempcontent");
+      const std::filesystem::path fullPath = std::filesystem::absolute(basePath / path);
       // Check for path traversal
       if (fullPath.string().find(basePath.string()) != 0) {
         return duk_generic_error(ctx, "fs.unlink: Path traversal detected");
@@ -120,8 +120,8 @@ struct customJS {
 
       // Normalize base path and input path
       // For fs.read, the base path is GAME_DIR to allow for reading other game files
-      const std::filesystem::path basePath = std::filesystem::canonical(GAME_DIR);
-      const std::filesystem::path fullPath = std::filesystem::canonical((basePath / "tempcontent") / path);
+      const std::filesystem::path basePath = std::filesystem::absolute(GAME_DIR);
+      const std::filesystem::path fullPath = std::filesystem::absolute((basePath / "portal2_tempcontent") / path);
       // Check for path traversal
       if (fullPath.string().find(basePath.string()) != 0) {
         return duk_generic_error(ctx, "fs.read: Path traversal detected");
@@ -148,8 +148,8 @@ struct customJS {
       if (!contents) return duk_type_error(ctx, "fs.write: Invalid contents argument");
 
       // Normalize base path and input path
-      const std::filesystem::path basePath = std::filesystem::canonical(CACHE_DIR / "tempcontent");
-      const std::filesystem::path fullPath = std::filesystem::canonical(basePath / path);
+      const std::filesystem::path basePath = std::filesystem::absolute(CACHE_DIR / "tempcontent");
+      const std::filesystem::path fullPath = std::filesystem::absolute(basePath / path);
       // Check for path traversal
       if (fullPath.string().find(basePath.string()) != 0) {
         return duk_generic_error(ctx, "fs.write: Path traversal detected");
@@ -174,9 +174,9 @@ struct customJS {
       if (!newPath) return duk_type_error(ctx, "fs.rename: Invalid newPath argument");
 
       // Normalize base path and input paths
-      const std::filesystem::path basePath = std::filesystem::canonical(CACHE_DIR / "tempcontent");
-      const std::filesystem::path fullPathOld = std::filesystem::canonical(basePath / oldPath);
-      const std::filesystem::path fullPathNew = std::filesystem::canonical(basePath / newPath);
+      const std::filesystem::path basePath = std::filesystem::absolute(CACHE_DIR / "tempcontent");
+      const std::filesystem::path fullPathOld = std::filesystem::absolute(basePath / oldPath);
+      const std::filesystem::path fullPathNew = std::filesystem::absolute(basePath / newPath);
       // Check for path traversal
       if (
         fullPathOld.string().find(basePath.string()) != 0 ||
