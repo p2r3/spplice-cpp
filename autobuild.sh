@@ -109,9 +109,16 @@ if [ "$target_windows" == true ] || [ "$target_both" == true ]; then
   cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll               ./win32
   cp /usr/lib/gcc/x86_64-w64-mingw32/12-posix/libgcc_s_seh-1.dll   ./win32
   cp /usr/lib/gcc/x86_64-w64-mingw32/12-posix/libstdc++-6.dll      ./win32
+  # Strip debug symbols
+  strip ./win32/SppliceCPP.exe
+  strip ./win32/*.dll
+  strip ./win32/platforms/*.dll
+  strip ./win32/imageformats/*.dll
 fi
 
 if [ "$target_windows" == false ] || [ "$target_both" == true ]; then
+  # Strip debug symbols
+  strip ./linux/SppliceCPP
   # Pack with UPX
   ../deps/shared/upx/upx --best --lzma ./linux/SppliceCPP
 fi
