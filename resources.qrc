@@ -6,5 +6,6 @@
     <file>resources/settings.png</file>
     <file>resources/add.png</file>
     <file>resources/down-arrow.png</file>
+    <file>resources/icon.ico</file>
   </qresource>
 </RCC>

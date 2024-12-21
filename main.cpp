@@ -330,6 +330,11 @@ int main (int argc, char *argv[]) {
 
   });
 
+#ifndef TARGET_WINDOWS
+  // Dynamically set the window icon on Linux
+  app.setWindowIcon(QIcon(":/resources/icon.ico"));
+#endif
+
   // Display the main application window
   window.setWindowTitle("Spplice");
   window.show();
