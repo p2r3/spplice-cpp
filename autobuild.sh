@@ -14,6 +14,7 @@ done
 # Pull, configure, and statically build Qt5.
 # Doing this, of course, assumes you agree to comply with the Qt open source licence.
 if [ ! -d "./qt5build" ]; then
+  cd scripts
   if [ "$target_both" == true ]; then
     ./qt5setup.sh --both
   elif [ "$target_windows" == true ]; then
@@ -35,6 +36,7 @@ cd ..
 
 # Build application dependencies if not present
 if [ ! -d "./deps" ]; then
+  cd scripts
   ./deps.sh
 fi
 
@@ -53,13 +55,13 @@ if [ "$target_both" == true ]; then
 
   # Build for both platforms back to back.
   sed -i "s|^#define TARGET_WINDOWS|// #define TARGET_WINDOWS|" ../globals.h
-  cmake ..
+  cmake ../scripts
   make -j$(nproc)
   mv ./SppliceCPP ../dist/linux/SppliceCPP
   rm -rf ./*
 
   sed -i "s|^// #define TARGET_WINDOWS|#define TARGET_WINDOWS|" ../globals.h
-  cmake -DCMAKE_TOOLCHAIN_FILE="../windows.cmake" ..
+  cmake -DCMAKE_TOOLCHAIN_FILE="../scripts/windows.cmake" ../scripts
   make -j$(nproc)
   mv ./SppliceCPP.exe ../dist/win32/SppliceCPP.exe
 
@@ -68,10 +70,12 @@ else
   # Build for the specified platform using CMake.
   if [ "$target_windows" == true ]; then
     rm -rf ../dist/win32; mkdir ../dist/win32
-    cmake -DCMAKE_TOOLCHAIN_FILE="../windows.cmake" ..
+    sed -i "s|^// #define TARGET_WINDOWS|#define TARGET_WINDOWS|" ../globals.h
+    cmake -DCMAKE_TOOLCHAIN_FILE="../scripts/windows.cmake" ../scripts
   else
     rm -rf ../dist/linux; mkdir ../dist/linux
-    cmake ..
+    sed -i "s|^#define TARGET_WINDOWS|// #define TARGET_WINDOWS|" ../globals.h
+    cmake ../scripts
   fi
   make -j$(nproc)
 

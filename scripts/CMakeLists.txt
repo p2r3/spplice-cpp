@@ -48,13 +48,13 @@ endfunction()
 
 # Set the exact Qt path (what "qt5setup.sh" builds) for the respective platform
 if (SPPLICE_TARGET_WINDOWS)
-  set(Qt5_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/win32/lib/cmake/Qt5")
-  set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/win32/lib/cmake/Qt5Widgets")
-  set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/win32/lib/cmake/Qt5Concurrent")
+  set(Qt5_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../qt5build/win32/lib/cmake/Qt5")
+  set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../qt5build/win32/lib/cmake/Qt5Widgets")
+  set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../qt5build/win32/lib/cmake/Qt5Concurrent")
 else()
-  set(Qt5_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/linux/lib/cmake/Qt5")
-  set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/linux/lib/cmake/Qt5Widgets")
-  set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qt5build/linux/lib/cmake/Qt5Concurrent")
+  set(Qt5_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../qt5build/linux/lib/cmake/Qt5")
+  set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../qt5build/linux/lib/cmake/Qt5Widgets")
+  set(Qt5Widgets_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../qt5build/linux/lib/cmake/Qt5Concurrent")
 endif()
 
 # Find required Qt5 components.
@@ -62,21 +62,21 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt5 REQUIRED COMPONENTS Concurrent)
 
 # Add resources file
-qt_add_resources(RESOURCES resources.qrc)
+qt_add_resources(RESOURCES ../resources.qrc)
 
 # Add compilable objects to the executable.
 add_executable(SppliceCPP
-  main.cpp
-  globals.cpp
-  tools/curl.cpp
-  tools/update.cpp
-  tools/qt.cpp
-  tools/install.cpp
-  tools/package.cpp
-  tools/repo.cpp
-  tools/js.cpp
-  tools/netcon.cpp
-  deps/shared/duktape/duktape.c
+  ../main.cpp
+  ../globals.cpp
+  ../tools/curl.cpp
+  ../tools/update.cpp
+  ../tools/qt.cpp
+  ../tools/install.cpp
+  ../tools/package.cpp
+  ../tools/repo.cpp
+  ../tools/js.cpp
+  ../tools/netcon.cpp
+  ../deps/shared/duktape/duktape.c
   ${RESOURCES}
 )
 
@@ -116,7 +116,7 @@ else() # If building for Linux:
     ${libacl_STATIC}
     ${libarchive_STATIC}
     ${liblzma_STATIC}
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/linux/lib/libcurl.a"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/linux/lib/libcurl.a"
   )
 
 endif()

@@ -1,8 +1,8 @@
 <RCC>
   <qresource prefix="/">
-    <file>fonts/Quicksand-Light.ttf</file>
-    <file>fonts/Quicksand-Regular.ttf</file>
-    <file>fonts/Quicksand-Medium.ttf</file>
+    <file>resources/fonts/Quicksand-Light.ttf</file>
+    <file>resources/fonts/Quicksand-Regular.ttf</file>
+    <file>resources/fonts/Quicksand-Medium.ttf</file>
     <file>resources/settings.png</file>
     <file>resources/add.png</file>
     <file>resources/down-arrow.png</file>

@@ -30,6 +30,7 @@ if command -v apt > /dev/null; then
 
 fi
 
+cd ..
 rm -rf ./deps
 mkdir deps
 cd deps

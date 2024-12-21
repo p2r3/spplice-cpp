@@ -11,6 +11,9 @@ for arg in "$@"; do
   fi
 done
 
+# Return to the project root directory.
+cd ..
+
 if [ "$target_both" == true ]; then
   echo "Building Qt5 for Linux and Windows..."
 elif [ "$target_windows" == true ]; then

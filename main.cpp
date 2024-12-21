@@ -183,9 +183,9 @@ int main (int argc, char *argv[]) {
   QApplication app(argc, argv);
 
   // Load the Quicksand fonts from resources
-  QFontDatabase::addApplicationFont(":/fonts/Quicksand-Light.ttf");
-  QFontDatabase::addApplicationFont(":/fonts/Quicksand-Regular.ttf");
-  QFontDatabase::addApplicationFont(":/fonts/Quicksand-Medium.ttf");
+  QFontDatabase::addApplicationFont(":/resources/fonts/Quicksand-Light.ttf");
+  QFontDatabase::addApplicationFont(":/resources/fonts/Quicksand-Regular.ttf");
+  QFontDatabase::addApplicationFont(":/resources/fonts/Quicksand-Medium.ttf");
 
   // Set up the main application window
   QMainWindow window;
