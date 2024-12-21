@@ -80,6 +80,12 @@ add_executable(SppliceCPP
   ${RESOURCES}
 )
 
+# Set the application icon on Windows
+if (SPPLICE_TARGET_WINDOWS)
+  set(APP_ICON_RESOURCE "${CMAKE_CURRENT_LIST_DIR}/../resources/icon.rc")
+  target_sources(SppliceCPP PRIVATE ${APP_ICON_RESOURCE})
+endif()
+
 # Link required Qt5 components.
 target_link_libraries(SppliceCPP Qt5::Widgets)
 target_link_libraries(SppliceCPP Qt5::Concurrent)
