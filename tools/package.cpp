@@ -34,9 +34,17 @@ ToolsPackage::PackageData::PackageData (QJsonObject package, const std::string &
   // These properties should be available even in old repositories
   this->title = package["title"].toString().toStdString();
   this->author = package["author"].toString().toStdString();
-  this->description = package["description"].toString().toStdString();
   this->file = package["file"].toString().toStdString();
   this->icon = package["icon"].toString().toStdString();
+
+  // Convert plaintext newlines to <br> tags
+  std::string rawDescription = package["description"].toString().toStdString();
+  this->description.reserve(rawDescription.size());
+
+  for (char c : rawDescription) {
+    if (c == '\n') this->description += "<br/>";
+    else this->description += c;
+  }
 
   // The version and args properties were introduced in version 3
   // Use a placeholder for version if not provided

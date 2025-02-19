@@ -148,12 +148,10 @@ QLabel {
       </font>
      </property>
      <property name="text">
-      <string>Lets you place portals mid-air.
-
-Portals cannot be placed on solid surfaces - placement is instead forced 128 Hammer units in front of the player, facing them. Chamber doors and fizzlers will reject portals, but other than that, no placement restrictions apply.</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lets you place portals mid-air.&lt;br/&gt;&lt;br/&gt;Portals cannot be placed on solid surfaces - placement is instead forced 128 Hammer units in front of the player, facing them. Chamber doors and fizzlers will reject portals, but other than that, no placement restrictions apply.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="textFormat">
-      <enum>Qt::PlainText</enum>
+      <enum>Qt::RichText</enum>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
