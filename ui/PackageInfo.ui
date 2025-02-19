@@ -29,6 +29,45 @@ QLabel {
 #PackageAuthor {
 	color: #666666;
 }
+#PackageDescriptionContainer {
+	background-color: #000000;
+}
+
+QScrollBar:vertical {
+  background: #000000;
+  border-radius: 5px;
+  width: 13px;
+}
+
+QScrollBar::handle:vertical {
+  background: #808080;
+  border-radius: 5px;
+  width: 25px;
+  min-height: 10px;
+}
+QScrollBar::handle:vertical::hover {
+	background: #CCCCCC;
+}
+
+QScrollBar::add-page:vertical {
+  border: none;
+  background: #000000;
+}
+
+QScrollBar::sub-page:vertical {
+  border: none;
+  background: #000000;
+}
+
+QScrollBar::add-line:vertical {
+  border: none;
+  background: #000000;
+}
+
+QScrollBar::sub-line:vertical {
+  border: none;
+  background: #000000;
+}
 </string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -45,7 +84,7 @@ QLabel {
     <number>50</number>
    </property>
    <property name="bottomMargin">
-    <number>50</number>
+    <number>35</number>
    </property>
    <item>
     <widget class="QLabel" name="PackageTitle">
@@ -140,25 +179,71 @@ QLabel {
     </layout>
    </item>
    <item>
-    <widget class="QLabel" name="PackageDescription">
-     <property name="font">
-      <font>
-       <family>Quicksand</family>
-       <pointsize>12</pointsize>
-      </font>
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="frameShape">
+      <enum>QFrame::Box</enum>
      </property>
-     <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lets you place portals mid-air.&lt;br/&gt;&lt;br/&gt;Portals cannot be placed on solid surfaces - placement is instead forced 128 Hammer units in front of the player, facing them. Chamber doors and fizzlers will reject portals, but other than that, no placement restrictions apply.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
      </property>
-     <property name="textFormat">
-      <enum>Qt::RichText</enum>
+     <property name="verticalScrollBarPolicy">
+      <enum>Qt::ScrollBarAsNeeded</enum>
      </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
+     <property name="horizontalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
      </property>
-     <property name="wordWrap">
+     <property name="widgetResizable">
       <bool>true</bool>
      </property>
+     <widget class="QWidget" name="PackageDescriptionContainer">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>613</width>
+        <height>116</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="PackageDescription">
+         <property name="font">
+          <font>
+           <family>Quicksand</family>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lets you place portals mid-air.&lt;br/&gt;&lt;br/&gt;Portals cannot be placed on solid surfaces - placement is instead forced 128 Hammer units in front of the player, facing them. Chamber doors and fizzlers will reject portals, but other than that, no placement restrictions apply.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="textFormat">
+          <enum>Qt::RichText</enum>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>
