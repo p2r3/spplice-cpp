@@ -26,14 +26,6 @@
 // Contains all WebSockets created in the JS environment
 CURL *webSockets[MAX_WEBSOCKETS];
 
-// HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
-#ifdef TARGET_WINDOWS
-  // Read offset of the console.log file
-  uint64_t consoleLogOffset = 0;
-  // Portal 2 window handle
-  HWND gameWindow = NULL;
-#endif
-
 // Implements custom functions for the JavaScript context
 struct customJS {
 
@@ -198,19 +190,6 @@ struct customJS {
   struct game {
     static duk_ret_t connect (duk_context *ctx) {
 
-// HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
-#ifdef TARGET_WINDOWS
-      std::filesystem::path logPath = (GAME_DIR / "portal2") / "console.log";
-      // If the log file already exists, offset into it
-      if (std::filesystem::exists(logPath)) {
-        consoleLogOffset = std::filesystem::file_size(logPath);
-      }
-      // Ensure the game window exists and can receive commands
-      if (FindWindowA("Valve001", 0) == NULL) duk_push_number(ctx, -1);
-      else duk_push_number(ctx, 1);
-      return 1;
-#endif
-
       int sockfd = ToolsNetCon::attemptConnection();
       duk_push_number(ctx, sockfd);
       return 1;
@@ -220,12 +199,6 @@ struct customJS {
 
       int sockfd = duk_to_int(ctx, 0);
       if (sockfd < 0) return duk_type_error(ctx, "game.disconnect: Invalid socket provided");
-
-// HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
-#ifdef TARGET_WINDOWS
-      // Ignore all calls to game.disconnect
-      return 0;
-#endif
 
       ToolsNetCon::disconnect(sockfd);
       return 0;
@@ -237,24 +210,6 @@ struct customJS {
       if (sockfd < 0) return duk_type_error(ctx, "game.send: Invalid socket provided");
 
       const char *command = duk_to_string(ctx, 1);
-
-// HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
-#ifdef TARGET_WINDOWS
-      // Ensure the game window exists
-      gameWindow = FindWindowA("Valve001", 0);
-      if (gameWindow == NULL) {
-        LOGFILE << "[E] Failed to find engine window." << std::endl;
-        return duk_generic_error(ctx, "game.send: Failed to send command");
-      }
-      // Create COPYDATA for sending the command
-      COPYDATASTRUCT data;
-      data.cbData = strlen(command) + 1;
-      data.dwData = 0;
-      data.lpData = (void *)command;
-      // Send the command to the window as a message
-      SendMessageA(gameWindow, WM_COPYDATA, 0, (LPARAM)&data);
-      return 0;
-#endif
 
       if (!ToolsNetCon::sendCommand(sockfd, command)) {
         return duk_generic_error(ctx, "game.send: Failed to send command");
@@ -269,45 +224,6 @@ struct customJS {
 
       size_t size = duk_to_uint(ctx, 1);
       if (!size) size = 1024;
-
-// HACK: The TCP console interface is buggy for an unknown reason, this is a Windows-only workaround
-#ifdef TARGET_WINDOWS
-      std::filesystem::path logPath = (GAME_DIR / "portal2") / "console.log";
-
-      // If no logfile exists, return empty string and reset seek offset
-      if (!std::filesystem::exists(logPath)) {
-        duk_push_string(ctx, "");
-        consoleLogOffset = 0;
-        return 1;
-      }
-
-      // Open the file in binary mode
-      std::ifstream file(logPath, std::ios::binary);
-      if (!file) {
-        LOGFILE << "[E] Failed to open file: " << logPath << std::endl;
-        return duk_generic_error(ctx, "game.read: Failed to read from socket");
-      }
-
-      // Seek to the desired offset, return to start of file on failure
-      file.seekg(consoleLogOffset);
-      if (!file) {
-        LOGFILE << "[W] Failed to seek to offset: " << consoleLogOffset << std::endl;
-        consoleLogOffset = 0;
-        duk_push_string(ctx, "");
-        return 1;
-      }
-
-      // Read N bytes into a string
-      std::string buffer(size, '\0');
-      file.read(&buffer[0], size);
-
-      // Handle cases where fewer bytes were read (e.g., EOF)
-      buffer.resize(file.gcount());
-
-      consoleLogOffset += buffer.length();
-      duk_push_lstring(ctx, buffer.c_str(), buffer.length());
-      return 1;
-#endif
 
       const std::string output = ToolsNetCon::readConsole(sockfd, size);
 
