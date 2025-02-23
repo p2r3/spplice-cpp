@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>600</width>
-    <height>330</height>
+    <height>415</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -88,6 +88,73 @@ QComboBox::down-arrow {
       </size>
      </property>
     </spacer>
+   </item>
+   <item>
+    <widget class="QLabel" name="CustomAppText">
+     <property name="font">
+      <font>
+       <family>Quicksand Medium</family>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>You may change which Steam game Spplice launches. This setting is reset to &quot;Portal 2&quot; on each new Spplice session. Not all packages are cross-compatible with all games.</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="CustomAppLayout">
+     <property name="bottomMargin">
+      <number>15</number>
+     </property>
+     <item>
+      <spacer name="CustomAppSpacerL">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QComboBox" name="CustomAppInput">
+       <property name="minimumSize">
+        <size>
+         <width>200</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>Quicksand Medium</family>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="CustomAppSpacerR">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
    </item>
    <item>
     <widget class="QLabel" name="CacheText">

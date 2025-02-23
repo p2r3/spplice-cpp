@@ -32,3 +32,22 @@ int SPPLICE_NETCON_PORT = -1;
 
 // Holds the current version's GitHub tag for automatic updates
 const std::string SPPLICE_VERSION_TAG = "v0.6.6-alpha";
+
+// Contains a list of compatible Steam app names
+std::string SPPLICE_STEAMAPP_NAMES[] = {
+  "Portal 2",
+  "Portal Stories: Mel",
+  "Portal Reloaded",
+  "Aperture Tag"
+};
+// Contains a list of compatible Steam AppIDs
+int SPPLICE_STEAMAPP_APPIDS[] = {
+  620,
+  317400,
+  1255980,
+  280740
+};
+// Holds the number of supported Steam apps
+const int SPPLICE_STEAMAPP_COUNT = 4;
+// Holds the index of the Steam app currently selected in settings
+int SPPLICE_STEAMAPP_INDEX = 0;

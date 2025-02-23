@@ -196,11 +196,13 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
   // This applies to the child process from fork()
   if (pid == 0) {
 
+    std::string appid = std::to_string(SPPLICE_STEAMAPP_APPIDS[SPPLICE_STEAMAPP_INDEX]);
+
     // Create a vector of arguments for the Steam call
     std::vector<const char*> args;
     args.push_back(steamPath.c_str());
     args.push_back("-applaunch");
-    args.push_back("620");
+    args.push_back(appid.c_str());
     args.push_back("-tempcontent");
 
     // If a valid port has been established, enable TCP console server
@@ -221,7 +223,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
     LOGFILE << "[E] Failed to call Steam binary from fork." << std::endl;
 
     // If the above failed, revert to using the Steam browser protocol
-    std::string command = "xdg-open steam://run/620//-tempcontent";
+    std::string command = "xdg-open steam://run/"+ appid +"//-tempcontent";
     if (SPPLICE_NETCON_PORT != -1) command += " -netconport " + std::to_string(SPPLICE_NETCON_PORT);
 
     for (const std::string &arg : extraArgs) {
@@ -258,7 +260,8 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
   si.dwFlags = STARTF_USESHOWWINDOW;
   si.wShowWindow = SW_HIDE;  // Hide the window for the detached process
 
-  std::wstring args = L"-applaunch 620 -tempcontent -condebug";
+  std::wstring appid = std::to_wstring(SPPLICE_STEAMAPP_APPIDS[SPPLICE_STEAMAPP_INDEX]);
+  std::wstring args = L"-applaunch " + appid + L" -tempcontent -condebug";
   if (SPPLICE_NETCON_PORT != -1) {
     args += L" -netconport " + std::to_wstring(SPPLICE_NETCON_PORT);
   }
