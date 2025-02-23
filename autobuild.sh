@@ -71,37 +71,35 @@ if [ ! -d "./deps" ]; then
   cd $build_root
 fi
 
-rm -rf build
-mkdir build
-
 # Create a directory for the distributable files.
 mkdir -p dist
 
-cd build
-
-# Build for the specified platform using CMake.
+# Build for the specified platform(s) using CMake.
 if [ "$target_windows" == true ]; then
+  rm -rf build; mkdir build; cd build
+
   rm -rf $build_root/dist/win32; mkdir $build_root/dist/win32
   sed -i "s|^// #define TARGET_WINDOWS|#define TARGET_WINDOWS|" $build_root/globals.h
   cmake -DCMAKE_TOOLCHAIN_FILE="$build_root/scripts/windows.cmake" $build_root/scripts
 
   make -j$(nproc)
-
   mv ./SppliceCPP.exe $build_root/dist/win32/SppliceCPP.exe
 
-elif [ "$target_linux" == true ]; then
+  cd $build_root
+fi
+
+if [ "$target_linux" == true ]; then
+  rm -rf build; mkdir build; cd build
+
   rm -rf $build_root/dist/linux; mkdir $build_root/dist/linux
   sed -i "s|^#define TARGET_WINDOWS|// #define TARGET_WINDOWS|" $build_root/globals.h
   cmake $build_root/scripts
 
   make -j$(nproc)
-
   mv ./SppliceCPP $build_root/dist/linux/SppliceCPP
-fi
 
-# Clear any residual build cache.
-cd $build_root
-rm -rf build
+  cd $build_root
+fi
 
 cd dist
 
