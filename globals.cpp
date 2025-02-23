@@ -31,7 +31,7 @@ int SPPLICE_INSTALL_STATE = 0; // 0 - idle; 1 - installing; 2 - installed
 int SPPLICE_NETCON_PORT = -1;
 
 // Holds the current version's GitHub tag for automatic updates
-const std::string SPPLICE_VERSION_TAG = "v0.6.6-alpha";
+const std::string SPPLICE_VERSION_TAG = "v0.7.0-alpha";
 
 // Contains a list of compatible Steam app names
 std::string SPPLICE_STEAMAPP_NAMES[] = {
