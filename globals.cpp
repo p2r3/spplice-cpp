@@ -48,6 +48,6 @@ int SPPLICE_STEAMAPP_APPIDS[] = {
   280740
 };
 // Holds the number of supported Steam apps
-const int SPPLICE_STEAMAPP_COUNT = 4;
+const int SPPLICE_STEAMAPP_COUNT = sizeof(SPPLICE_STEAMAPP_APPIDS) / sizeof(*SPPLICE_STEAMAPP_APPIDS);
 // Holds the index of the Steam app currently selected in settings
 int SPPLICE_STEAMAPP_INDEX = 0;
