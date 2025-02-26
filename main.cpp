@@ -213,14 +213,20 @@ int main (int argc, char *argv[]) {
     for (int i = 0; i < SPPLICE_STEAMAPP_COUNT; i ++) {
       steamApps.append(QString::fromStdString(SPPLICE_STEAMAPP_NAMES[i]));
     }
-    dialogUI.CustomAppInput->addItems(steamApps);
+
+    QComboBox *customAppDropdown = dialogUI.CustomAppInput;
+    customAppDropdown->addItems(steamApps);
 
     // Select the relevant app index
-    dialogUI.CustomAppInput->setCurrentIndex(SPPLICE_STEAMAPP_INDEX);
+    customAppDropdown->setCurrentIndex(SPPLICE_STEAMAPP_INDEX);
 
     // Connect the event of changing the selected app
-    QObject::connect(dialogUI.CustomAppInput, QOverload<int>::of(&QComboBox::currentIndexChanged), [](int newIndex) {
-      SPPLICE_STEAMAPP_INDEX = newIndex;
+    QObject::connect(customAppDropdown, QOverload<int>::of(&QComboBox::currentIndexChanged), [customAppDropdown](int newIndex) {
+      if (newIndex == SPPLICE_STEAMAPP_INDEX) return;
+      if (SPPLICE_INSTALL_STATE != 0) {
+        customAppDropdown->setCurrentIndex(SPPLICE_STEAMAPP_INDEX);
+        QMessageBox::critical(nullptr, "Game is Running", "You may not change the selected app while a package is installed.");
+      } else SPPLICE_STEAMAPP_INDEX = newIndex;
     });
 
     // Set the text of the cache toggle button
