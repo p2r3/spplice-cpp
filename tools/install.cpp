@@ -528,6 +528,10 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
   std::string gameProcessPath = "";
   while (gameProcessPath.length() == 0) {
     gameProcessPath = ToolsInstall::getProcessPath("portal2_linux");
+    // Check Windows executable name too, in case we're running with Proton
+    if (gameProcessPath.length() == 0) {
+      gameProcessPath = ToolsInstall::getProcessPath("portal2.exe");
+    }
   }
 #else
   std::wstring gameProcessPath = L"";
@@ -605,7 +609,7 @@ bool ToolsInstall::killPortal2 () {
 
   // Use a platform-specific command string for killing the process
 #ifndef TARGET_WINDOWS
-  const std::string command = "pkill -e portal2_linux -9";
+  const std::string command = "pkill -e portal2_linux -9; pkill -e portal2.exe -9";
 #else
   const std::string command = "taskkill /F /T /IM portal2.exe";
 #endif
