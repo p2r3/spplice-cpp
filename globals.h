@@ -18,6 +18,7 @@ extern int SPPLICE_NETCON_PORT;
 extern const std::string SPPLICE_VERSION_TAG;
 
 extern std::string SPPLICE_STEAMAPP_NAMES[];
+extern std::string SPPLICE_STEAMAPP_DIRS[];
 extern int SPPLICE_STEAMAPP_APPIDS[];
 extern const int SPPLICE_STEAMAPP_COUNT;
 extern int SPPLICE_STEAMAPP_INDEX;

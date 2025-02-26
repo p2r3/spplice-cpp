@@ -113,7 +113,7 @@ struct customJS {
       // Normalize base path and input path
       // For fs.read, the base path is GAME_DIR to allow for reading other game files
       const std::filesystem::path basePath = std::filesystem::absolute(GAME_DIR);
-      const std::filesystem::path fullPath = std::filesystem::absolute((basePath / "portal2_tempcontent") / path);
+      const std::filesystem::path fullPath = std::filesystem::absolute((basePath / (SPPLICE_STEAMAPP_DIRS[SPPLICE_STEAMAPP_INDEX] + "_tempcontent")) / path);
       // Check for path traversal
       if (fullPath.string().find(basePath.string()) != 0) {
         return duk_generic_error(ctx, "fs.read: Path traversal detected");

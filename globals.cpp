@@ -40,6 +40,13 @@ std::string SPPLICE_STEAMAPP_NAMES[] = {
   "Portal Reloaded",
   "Aperture Tag"
 };
+// Contains a list of mod directory names for supported Steam apps
+std::string SPPLICE_STEAMAPP_DIRS[] = {
+  "portal2",
+  "portal_stories",
+  "portalreloaded",
+  "aperturetag"
+};
 // Contains a list of compatible Steam AppIDs
 int SPPLICE_STEAMAPP_APPIDS[] = {
   620,

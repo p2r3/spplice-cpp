@@ -520,7 +520,7 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
   // Start Portal 2
   if (!startPortal2(args)) {
     std::filesystem::remove_all(tmpPackageDirectory);
-    return "Failed to start Portal 2. Is Steam running?";
+    return "Failed to start " + SPPLICE_STEAMAPP_NAMES[SPPLICE_STEAMAPP_INDEX] + ". Is Steam running?";
   }
 
   // Find the Portal 2 game files path
@@ -537,9 +537,9 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
 #endif
 
   GAME_DIR = std::filesystem::path(gameProcessPath).parent_path();
-  LOGFILE << "[I] Found Portal 2 at " << GAME_DIR << std::endl;
+  LOGFILE << "[I] Found " << SPPLICE_STEAMAPP_NAMES[SPPLICE_STEAMAPP_INDEX] << " at " << GAME_DIR << std::endl;
 
-  std::filesystem::path tempcontentPath = GAME_DIR / "portal2_tempcontent";
+  std::filesystem::path tempcontentPath = GAME_DIR / (SPPLICE_STEAMAPP_DIRS[SPPLICE_STEAMAPP_INDEX] + "_tempcontent");
 
   // Handle an existing tempcontent directory
   if (std::filesystem::exists(tempcontentPath)) {
@@ -552,7 +552,7 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
       std::filesystem::create_directories(tempcontentBackupPath);
       // Check for the next available backup slot
       for (int i = 1; i <= 64; i ++) {
-        std::filesystem::path newPath = tempcontentBackupPath / ("portal2_tempcontent_" + std::to_string(i));
+        std::filesystem::path newPath = tempcontentBackupPath / (SPPLICE_STEAMAPP_DIRS[SPPLICE_STEAMAPP_INDEX] + "_tempcontent_" + std::to_string(i));
         if (std::filesystem::exists(newPath)) continue;
         std::filesystem::rename(tempcontentPath, newPath);
         break;
@@ -563,11 +563,11 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
   // Link the extracted package files to the destination tempcontent directory
   if (!linkDirectory(tmpPackageDirectory, tempcontentPath)) {
     std::filesystem::remove_all(tmpPackageDirectory);
-    return "Failed to link package files to portal2_tempcontent.";
+    return "Failed to link package files to tempcontent.";
   }
   LOGFILE << "[I] Linked " << tmpPackageDirectory << " to " << tempcontentPath << std::endl;
 
-  const std::filesystem::path soundcacheSourcePath = GAME_DIR / "portal2" / "maps" / "soundcache" / "_master.cache";
+  const std::filesystem::path soundcacheSourcePath = GAME_DIR / SPPLICE_STEAMAPP_DIRS[SPPLICE_STEAMAPP_INDEX] / "maps" / "soundcache" / "_master.cache";
   const std::filesystem::path soundcacheDestPath = tempcontentPath / "maps" / "soundcache" / "_master.cache";
 
   // Link the soundcache from base Portal 2 to skip waiting for it to generate
@@ -612,10 +612,10 @@ bool ToolsInstall::killPortal2 () {
 
   int result = std::system(command.c_str());
   if (result != 0) {
-    LOGFILE << "[E] Failed to kill Portal 2. Error code: " << result << std::endl;
+    LOGFILE << "[E] Failed to kill " << SPPLICE_STEAMAPP_NAMES[SPPLICE_STEAMAPP_INDEX] << ". Error code: " << result << std::endl;
     return false;
   } else {
-    LOGFILE << "[I] Killed Portal 2." << std::endl;
+    LOGFILE << "[I] Killed " << SPPLICE_STEAMAPP_NAMES[SPPLICE_STEAMAPP_INDEX] << "." << std::endl;
     return true;
   }
 
@@ -627,17 +627,11 @@ void ToolsInstall::uninstall () {
   if (GAME_DIR.empty() || SPPLICE_INSTALL_STATE == 0) return;
 
   // Remove the tempcontent directory link
-  const std::filesystem::path tempcontentPath = GAME_DIR / "portal2_tempcontent";
+  const std::filesystem::path tempcontentPath = GAME_DIR / (SPPLICE_STEAMAPP_DIRS[SPPLICE_STEAMAPP_INDEX] + "_tempcontent");
   if (isDirectoryLink(tempcontentPath)) unlinkDirectory(tempcontentPath);
 
   // Remove the actual package directory containing all package files
   const std::filesystem::path tmpPackageDirectory = CACHE_DIR / "tempcontent";
   std::filesystem::remove_all(tmpPackageDirectory);
-
-  // HACK: The Windows console workaround creates a logfile that needs to be cleaned up
-#ifdef TARGET_WINDOWS
-  std::filesystem::path logPath = (GAME_DIR / "portal2") / "console.log";
-  if (std::filesystem::exists(logPath)) std::filesystem::remove(logPath);
-#endif
 
 }
