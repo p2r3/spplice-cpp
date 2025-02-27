@@ -23,7 +23,7 @@
 #include <QMessageBox>
 #include <QtConcurrent>
 #include <QFutureWatcher>
-#include "ui/mainwindow.h"
+#include "ui/mainwindow_extend.h"
 #include "ui/repositories.h"
 #include "ui/settings.h"
 
@@ -188,9 +188,7 @@ int main (int argc, char *argv[]) {
   QFontDatabase::addApplicationFont(":/resources/fonts/Quicksand-Medium.ttf");
 
   // Set up the main application window
-  QMainWindow window;
-  Ui::MainWindow windowUI;
-  windowUI.setupUi(&window);
+  MainWindow window;
 
   // Initialize CURL
   ToolsCURL::init();
@@ -198,10 +196,10 @@ int main (int argc, char *argv[]) {
   // Check for updates on a separate thread
   std::thread(ToolsUpdate::installUpdate).detach();
 
-  QVBoxLayout *packageContainer = windowUI.PackageListLayout;
+  QVBoxLayout *packageContainer = window.getPackageListLayout();
 
   // Connect the "Settings" button
-  QObject::connect(windowUI.TitleButtonL, &QPushButton::clicked, [packageContainer]() {
+  QObject::connect(window.getSettingsButton(), &QPushButton::clicked, [packageContainer]() {
 
     // Create settings dialog
     QDialog *dialog = new QDialog;
@@ -307,7 +305,7 @@ int main (int argc, char *argv[]) {
   });
 
   // Connect the "Add Repository" button
-  QObject::connect(windowUI.TitleButtonR, &QPushButton::clicked, [packageContainer]() {
+  QObject::connect(window.getRepositoryButton(), &QPushButton::clicked, [packageContainer]() {
 
     // Create repository management dialog
     QDialog *dialog = new QDialog;

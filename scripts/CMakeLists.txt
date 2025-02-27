@@ -66,6 +66,7 @@ qt_add_resources(RESOURCES ../resources.qrc)
 
 # Add compilable objects to the executable.
 add_executable(SppliceCPP
+  ../ui/mainwindow_extend.cpp
   ../main.cpp
   ../globals.cpp
   ../tools/curl.cpp
