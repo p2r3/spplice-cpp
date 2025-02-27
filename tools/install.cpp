@@ -41,7 +41,6 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
   struct archive* archive;
   struct archive* extracted;
   struct archive_entry* entry;
-  int r;
 
   archive = archive_read_new();
   archive_read_support_format_tar(archive);
@@ -49,12 +48,12 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
   extracted = archive_write_disk_new();
   archive_write_disk_set_options(extracted, ARCHIVE_EXTRACT_TIME);
 
-  if ((r = archive_read_open_filename_w(archive, path.wstring().c_str(), 10240))) {
+  if (archive_read_open_filename_w(archive, path.wstring().c_str(), 10240)) {
     LOGFILE << "[E] Could not open file: " << archive_error_string(archive) << std::endl;
     return false;
   }
 
-  bool output = true;
+  bool success = true;
   while (archive_read_next_header(archive, &entry) == ARCHIVE_OK) {
 
     std::filesystem::path full_path = dest / archive_entry_pathname(entry);
@@ -66,19 +65,20 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
     const void* buff;
     size_t size;
     la_int64_t offset;
+    int err;
 
     while (true) {
-      r = archive_read_data_block(archive, &buff, &size, &offset);
-      if (r == ARCHIVE_EOF) break;
-      if (r != ARCHIVE_OK) {
+      err = archive_read_data_block(archive, &buff, &size, &offset);
+      if (err == ARCHIVE_EOF) break;
+      if (err != ARCHIVE_OK) {
         LOGFILE << "[E] Archive read error: " << archive_error_string(archive) << std::endl;
-        output = false;
+        success = false;
         break;
       }
-      r = archive_write_data_block(extracted, buff, size, offset);
-      if (r != ARCHIVE_OK) {
+      err = archive_write_data_block(extracted, buff, size, offset);
+      if (err != ARCHIVE_OK) {
         LOGFILE << "[E] Archive write error: " << archive_error_string(extracted) << std::endl;
-        output = false;
+        success = false;
         break;
       }
     }
@@ -91,7 +91,7 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
   archive_write_close(extracted);
   archive_write_free(extracted);
 
-  return output;
+  return success;
 
 }
 
