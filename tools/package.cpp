@@ -156,7 +156,7 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
   } else {
     // Generate a hash from the file's URL to use as a file name
     size_t fileURLHash = std::hash<std::string>{}(package->file);
-    std::filesystem::path filePath = CACHE_DIR / std::to_string(fileURLHash);
+    filePath = CACHE_DIR / std::to_string(fileURLHash);
 
     // Download the package file if we don't have a valid cache
     if (CACHE_ENABLE && validateFileVersion(filePath, package->version)) {
