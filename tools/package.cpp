@@ -135,22 +135,32 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
   SPPLICE_INSTALL_STATE = 1;
   emit installStateUpdate();
 
-  // Generate a hash from the file's URL to use as a file name
-  size_t fileURLHash = std::hash<std::string>{}(package->file);
-  const std::filesystem::path filePath = CACHE_DIR / std::to_string(fileURLHash);
+  // Store the package archive path, assigned in branch below
+  std::filesystem::path filePath;
 
-  // Download the package file if we don't have a valid cache
-  if (CACHE_ENABLE && validateFileVersion(filePath, package->version)) {
-    LOGFILE << "[I] Cached package found, skipping download" << std::endl;
+  // Avoid downloading packages from the special "local" repository
+  if (package->repository == "local") {
+    // Point directly to the local package's archive file
+    filePath = (APP_DIR / "local") / package->file;
   } else {
-    if (CACHE_ENABLE && !updateFileVersion(filePath, package->version)) {
-      LOGFILE << "[W] Couldn't open package version file for writing" << std::endl;
-    }
-    if (!ToolsCURL::downloadFile(package->file, filePath)) {
-      ToolsQT::displayErrorPopup("Installation aborted", "Failed to download package file.");
-      return;
+    // Generate a hash from the file's URL to use as a file name
+    size_t fileURLHash = std::hash<std::string>{}(package->file);
+    std::filesystem::path filePath = CACHE_DIR / std::to_string(fileURLHash);
+
+    // Download the package file if we don't have a valid cache
+    if (CACHE_ENABLE && validateFileVersion(filePath, package->version)) {
+      LOGFILE << "[I] Cached package found, skipping download" << std::endl;
+    } else {
+      if (CACHE_ENABLE && !updateFileVersion(filePath, package->version)) {
+        LOGFILE << "[W] Couldn't open package version file for writing" << std::endl;
+      }
+      if (!ToolsCURL::downloadFile(package->file, filePath)) {
+        ToolsQT::displayErrorPopup("Installation aborted", "Failed to download package file.");
+        return;
+      }
     }
   }
+
 
   // Attempt installation
   std::string installationResult = ToolsInstall::installPackageFile(filePath, package->args);
