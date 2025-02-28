@@ -104,8 +104,6 @@ void PackageItemWorker::getPackageIcon (const ToolsPackage::PackageData *package
   // Holds the path to the package icon file, assigned in branch below
   std::filesystem::path imagePath;
 
-  LOGFILE << "[I] " << package->title << ": " << package->repository << std::endl;
-
   // Avoid downloading images from the special "local" repository
   if (package->repository == "local") {
     // Point directly to the local icon file
