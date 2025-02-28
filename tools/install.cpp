@@ -574,13 +574,16 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
   const std::filesystem::path soundcacheSourcePath = GAME_DIR / SPPLICE_STEAMAPP_DIRS[SPPLICE_STEAMAPP_INDEX] / "maps" / "soundcache" / "_master.cache";
   const std::filesystem::path soundcacheDestPath = tempcontentPath / "maps" / "soundcache" / "_master.cache";
 
-  // Link the soundcache from base Portal 2 to skip waiting for it to generate
-  if (!linkFile(soundcacheSourcePath, soundcacheDestPath)) {
-    // If linking the soundcache failed, copy it instead
-    LOGFILE << "[W] Failed to link soundcache file, copying instead" << std::endl;
-    std::filesystem::copy_file(soundcacheSourcePath, soundcacheDestPath);
-  } else {
-    LOGFILE << "[I] Linked soundcache file" << std::endl;
+  // Create a soundcache to skip waiting for it to generate
+  if (!std::filesystem::exists(soundcacheDestPath)) {
+    // Link the soundcache from base Portal 2 if possible
+    if (!linkFile(soundcacheSourcePath, soundcacheDestPath)) {
+      // If linking the soundcache failed, copy it instead
+      LOGFILE << "[W] Failed to link soundcache file, copying instead" << std::endl;
+      std::filesystem::copy_file(soundcacheSourcePath, soundcacheDestPath);
+    } else {
+      LOGFILE << "[I] Linked soundcache file" << std::endl;
+    }
   }
 
   // Run the JS API entrypoint (if one exists) on a detached thread
