@@ -1,6 +1,8 @@
 // Standard libraries
 #include <iostream>
 #include <fstream>
+#include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
 #include <filesystem>
@@ -371,6 +373,32 @@ int main (int argc, char *argv[]) {
     lastRepository = repositories.at(i);
     // Sleep for 20ms on each repository to reduce strain on the network
     std::this_thread::sleep_for(std::chrono::milliseconds(20 * i));
+  }
+
+  // Load the local repository (if one exists)
+  const std::filesystem::path localIndexPath = APP_DIR / "local.json";
+  if (std::filesystem::exists(localIndexPath)) {
+
+    std::ifstream indexFile(localIndexPath);
+    if (!indexFile.is_open()) {
+      LOGFILE << "[E] Failed to open local repository index " << localIndexPath << std::endl;
+    } else try {
+      // Read the file into a stringstream buffer
+      std::stringstream buffer;
+      buffer << indexFile.rdbuf();
+
+      // Parse repository contents
+      auto localRepository = ToolsRepo::parseRepository(buffer.str());
+      // Insert packages into UI package list container
+      for (auto package : localRepository) {
+        // Every local package gets inserted at the very top
+        // This naturally floats the most recent additions to the top
+        packageContainer->insertWidget(0, ToolsPackage::createPackageItem(package));
+      }
+    } catch (const std::exception &e) {
+      LOGFILE << "[E] Failed to parse local repository data: " << e.what() << std::endl;
+    }
+
   }
 
   // Clean up CURL on program termination

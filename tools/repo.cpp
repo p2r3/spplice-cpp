@@ -14,11 +14,11 @@
 // Definitions for this source file
 #include "repo.h"
 
-// Fetches and parses repository JSON from the given URL
-std::vector<const ToolsPackage::PackageData*> ToolsRepo::fetchRepository (const std::string &url) {
+// Parses repository data from the given JSON string
+std::vector<const ToolsPackage::PackageData*> ToolsRepo::parseRepository (const std::string &json) {
 
-  // Download the repository JSON
-  QString jsonString = QString::fromStdString(ToolsCURL::downloadString(url));
+  // Convert input string to a QString
+  QString jsonString = QString::fromStdString(json);
 
   // Parse the repository index
   QJsonDocument doc = QJsonDocument::fromJson(jsonString.toUtf8());
@@ -31,12 +31,17 @@ std::vector<const ToolsPackage::PackageData*> ToolsRepo::fetchRepository (const 
   // Create a vector, since a dynamic array is a bit more of a pain in the ass
   std::vector<const ToolsPackage::PackageData*> repository;
   for (int i = 0; i < packageCount; i ++) {
-    ToolsPackage::PackageData *package = new ToolsPackage::PackageData(packages[i].toObject(), url);
+    ToolsPackage::PackageData *package = new ToolsPackage::PackageData(packages[i].toObject(), "local");
     repository.push_back(package);
   }
 
   return repository;
 
+}
+
+// Fetches and parses repository JSON from the given URL
+std::vector<const ToolsPackage::PackageData*> ToolsRepo::fetchRepository (const std::string &url) {
+  return ToolsRepo::parseRepository(ToolsCURL::downloadString(url));
 }
 
 // Adds the given URL to the repository list file

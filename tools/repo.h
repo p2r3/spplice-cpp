@@ -6,6 +6,7 @@
 
 class ToolsRepo {
   public:
+    static std::vector<const ToolsPackage::PackageData*> parseRepository (const std::string &json);
     static std::vector<const ToolsPackage::PackageData*> fetchRepository (const std::string &url);
     static void writeToFile (const std::string &url);
     static std::vector<std::string> readFromFile ();
