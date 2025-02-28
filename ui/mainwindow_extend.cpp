@@ -15,6 +15,8 @@
 #include <QJsonArray>
 #include <QJsonValue>
 #include <QMessageBox>
+#include <QImage>
+#include <QByteArray>
 // Used for returning UI elements
 #include <QVBoxLayout>
 #include <QPushButton>
@@ -176,6 +178,43 @@ void MainWindow::dropEvent (QDropEvent *event) {
         std::filesystem::remove_all(extractPath);
         return;
       }
+
+      // Retrieve package icon string - this is either base64 or a filename
+      const QString iconURL = obj["icon"].toString();
+
+      // Determine the image format from the MIME type
+      const char *iconType = iconURL.startsWith("data:image/png") ? "PNG" : "JPEG";
+
+      // Determine output path for the package icon file
+      const std::string iconFileName = timess.str() + "_icon";
+      const std::filesystem::path iconDestinationPath = archivePath / iconFileName;
+#ifndef TARGET_WINDOWS
+      const QString iconDestinationQString = QString::fromStdString(iconDestinationPath.string());
+#else
+      const QString iconDestinationQString = QString::fromStdWString(iconDestinationPath.wstring());
+#endif
+
+      if (iconURL.startsWith("data:image/")) {
+        // If this looks like base64 data, use QImage to save it to file
+        QImage icon;
+        if (!icon.loadFromData(QByteArray::fromBase64(iconURL.split(",")[1].toLatin1()), iconType)) {
+          LOGFILE << "[W] Failed to load package icon from base64 data." << std::endl;
+        } else if (!icon.save(iconDestinationQString, iconType)) {
+          LOGFILE << "[W] Failed to write package icon to file." << std::endl;
+        }
+      } else {
+        // If this looks like a file name, attempt to move it next to the archive
+        const std::filesystem::path iconSourcePath = archivePath / iconURL.toStdString();
+        if (!std::filesystem::exists(iconSourcePath)) {
+          LOGFILE << "[W] Package icon file specified in manifest does not exist." << std::endl;
+        } else try {
+          std::filesystem::rename(iconSourcePath, iconDestinationPath);
+        } catch (const std::filesystem::filesystem_error& e) {
+          LOGFILE << "[W] Failed to move extracted package icon file." << std::endl;
+        }
+      }
+      // Update the icon string
+      obj.insert("icon", QJsonValue(QString::fromStdString(iconFileName)));
 
       // Create a PackageData object from the JSON object
       ToolsPackage::PackageData *package = new ToolsPackage::PackageData(obj, "local");

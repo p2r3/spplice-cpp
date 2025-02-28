@@ -101,16 +101,27 @@ bool updateFileVersion (std::filesystem::path filePath, const std::string &versi
 
 void PackageItemWorker::getPackageIcon (const ToolsPackage::PackageData *package, const QSize iconSize) {
 
-  // Generate a hash from the icon URL to use as a file name
-  size_t imageURLHash = std::hash<std::string>{}(package->icon);
-  std::filesystem::path imagePath = CACHE_DIR / std::to_string(imageURLHash);
+  // Holds the path to the package icon file, assigned in branch below
+  std::filesystem::path imagePath;
 
-  // Check if we have a valid icon cache
-  if (!validateFileVersion(imagePath, package->version)) {
-    updateFileVersion(imagePath, package->version);
-    // Attempt the download 5 times before giving up
-    for (int attempts = 0; attempts < 5; attempts ++) {
-      if (ToolsCURL::downloadFile(package->icon, imagePath)) break;
+  LOGFILE << "[I] " << package->title << ": " << package->repository << std::endl;
+
+  // Avoid downloading images from the special "local" repository
+  if (package->repository == "local") {
+    // Point directly to the local icon file
+    imagePath = (APP_DIR / "local") / package->icon;
+  } else {
+    // Generate a hash from the icon URL to use as a file name
+    size_t imageURLHash = std::hash<std::string>{}(package->icon);
+    imagePath = CACHE_DIR / std::to_string(imageURLHash);
+
+    // Check if we have a valid icon cache
+    if (!validateFileVersion(imagePath, package->version)) {
+      updateFileVersion(imagePath, package->version);
+      // Attempt the download 5 times before giving up
+      for (int attempts = 0; attempts < 5; attempts ++) {
+        if (ToolsCURL::downloadFile(package->icon, imagePath)) break;
+      }
     }
   }
 
@@ -286,9 +297,16 @@ QWidget* ToolsPackage::createPackageItem (const ToolsPackage::PackageData *packa
     dialogUI.PackageAuthor->setText(QString::fromStdString("By " + package->author));
     dialogUI.PackageDescription->setText(QString::fromStdString(package->description));
 
-    // Set the icon - assume the image has already been downloaded
-    size_t imageURLHash = std::hash<std::string>{}(package->icon);
-    std::filesystem::path imagePath = CACHE_DIR / std::to_string(imageURLHash);
+    // Load the package icon
+    std::filesystem::path imagePath;
+    if (package->repository == "local") {
+      // Point directly to the local icon file
+      imagePath = (APP_DIR / "local") / package->icon;
+    } else {
+      // Assume the image has already been downloaded
+      size_t imageURLHash = std::hash<std::string>{}(package->icon);
+      imagePath = CACHE_DIR / std::to_string(imageURLHash);
+    }
 
     QSize iconSize = dialogUI.PackageIcon->size();
     QPixmap iconPixmap = ToolsQT::getPixmapFromPath(imagePath, iconSize);
