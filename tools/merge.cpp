@@ -35,6 +35,7 @@ struct sourceProperties {
       "ppmod_portals_r_anchor",
       "ppmod_eyes",
       "pplayer_eyes",
+      "pplayer_eyes_",
       "pplayer_ent_"
     };
     // Empty container for list of encountered script files
