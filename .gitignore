@@ -1,6 +1,7 @@
 .vscode
 build
 ui/*.h
+!ui/*_extend.h
 qt5
 qt5build
 deps
