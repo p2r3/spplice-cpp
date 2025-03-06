@@ -1,0 +1,20 @@
+BasedOnStyle: LLVM
+BreakBeforeBraces: Attach
+ColumnLimit: 0
+BinPackParameters: true
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: true
+  AfterForeachMacros: true
+  AfterFunctionDeclarationName: true
+  AfterFunctionDefinitionName: true
+  AfterIfMacros: true
+  AfterOverloadedOperator: true
+  AfterPlacementOperator: false
+  AfterRequiresInClause: false
+  AfterRequiresInExpression: true
+  BeforeNonEmptyParentheses: false
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: true
+MaxEmptyLinesToKeep: 1
+RemoveSemicolon: true
