@@ -5,6 +5,7 @@
 #include <chrono>
 #include <string>
 #include <functional>
+#include <algorithm>
 #include <QPixmap>
 #include <QWidget>
 #include <QThread>
@@ -61,44 +62,6 @@ ToolsPackage::PackageData::PackageData (QJsonObject package, const std::string &
 
 }
 
-// Checks if the given file exists and is up-to-date
-bool validateFileVersion (std::filesystem::path filePath, const std::string &version) {
-
-  // Check if the given file exists
-  if (!std::filesystem::exists(filePath)) return false;
-
-  // Check if the respective version file exists
-  filePath += ".ver";
-  if (!std::filesystem::exists(filePath)) return false;
-
-  // Read the version file
-  std::ifstream versionFile(filePath);
-  std::string localVersion = "";
-
-  if (versionFile.is_open()) {
-    std::getline(versionFile, localVersion);
-    versionFile.close();
-  }
-
-  return localVersion == version;
-
-}
-
-// Write a version file for the given file
-bool updateFileVersion (std::filesystem::path filePath, const std::string &version) {
-
-  filePath += ".ver";
-  std::ofstream versionFile(filePath);
-
-  if (versionFile.is_open()) {
-    versionFile << version;
-    versionFile.close();
-    return true;
-  }
-  return false;
-
-}
-
 void PackageItemWorker::getPackageIcon (const ToolsPackage::PackageData *package, const QSize iconSize) {
 
   // Holds the path to the package icon file, assigned in branch below
@@ -114,8 +77,8 @@ void PackageItemWorker::getPackageIcon (const ToolsPackage::PackageData *package
     imagePath = CACHE_DIR / std::to_string(imageURLHash);
 
     // Check if we have a valid icon cache
-    if (!validateFileVersion(imagePath, package->version)) {
-      updateFileVersion(imagePath, package->version);
+    if (!ToolsInstall::validateFileVersion(imagePath, package->version)) {
+      ToolsInstall::updateFileVersion(imagePath, package->version);
       // Attempt the download 5 times before giving up
       for (int attempts = 0; attempts < 5; attempts ++) {
         if (ToolsCURL::downloadFile(package->icon, imagePath)) break;
@@ -137,45 +100,26 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
 
   // If a package is already installing (or installed), exit early
   if (SPPLICE_INSTALL_STATE != 0) {
-    ToolsQT::displayErrorPopup("Spplice is busy", "You cannot install two packages at once!");
+    ToolsQT::displayErrorPopup("Spplice is busy", "You cannot install two packages at once without enabling merging!");
     return;
   }
 
   SPPLICE_INSTALL_STATE = 1;
   emit installStateUpdate();
 
-  // Store the package archive path, assigned in branch below
-  std::filesystem::path filePath;
-
-  // Avoid downloading packages from the special "local" repository
-  if (package->repository == "local") {
-    // Point directly to the local package's archive file
-    filePath = (APP_DIR / "local") / package->file;
-  } else {
-    // Generate a hash from the file's URL to use as a file name
-    size_t fileURLHash = std::hash<std::string>{}(package->file);
-    filePath = CACHE_DIR / std::to_string(fileURLHash);
-
-    // Download the package file if we don't have a valid cache
-    if (CACHE_ENABLE && validateFileVersion(filePath, package->version)) {
-      LOGFILE << "[I] Cached package found, skipping download" << std::endl;
-    } else {
-      if (CACHE_ENABLE && !updateFileVersion(filePath, package->version)) {
-        LOGFILE << "[W] Couldn't open package version file for writing" << std::endl;
-      }
-      if (!ToolsCURL::downloadFile(package->file, filePath)) {
-        ToolsQT::displayErrorPopup("Installation aborted", "Failed to download package file.");
-        return;
-      }
-    }
+  // Download the package archive
+  const std::filesystem::path filePath = ToolsInstall::downloadPackageFromData(package);
+  // Handle download errors
+  if (filePath.empty()) {
+    if (package->repository == "local") ToolsQT::displayErrorPopup("Installation aborted", "Package file missing.");
+    else ToolsQT::displayErrorPopup("Installation aborted", "Failed to download package file.");
+    return;
   }
-
-
   // Attempt installation
   std::string installationResult = ToolsInstall::installPackageFile(filePath, package->args);
 
   // Remove downloaded archive post-installation if caching is disabled
-  if (!CACHE_ENABLE) std::filesystem::remove(filePath);
+  if (!CACHE_ENABLE && package->repository != "local") std::filesystem::remove(filePath);
 
   // If installation failed, display error and exit early
   if (installationResult != "") {
@@ -191,11 +135,7 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
   emit installStateUpdate();
 
   // Stall until Portal 2 has been closed
-#ifndef TARGET_WINDOWS
-  while (ToolsInstall::getProcessPath("portal2_linux") != "") {
-#else
-  while (ToolsInstall::getProcessPath("portal2.exe") != L"") {
-#endif
+  while (ToolsInstall::isGameRunning()) {
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
   }
 
@@ -224,6 +164,24 @@ QWidget* ToolsPackage::createPackageItem (const ToolsPackage::PackageData *packa
   // Connect the install button
   QPushButton *installButton = itemUI.PackageInstallButton;
   QObject::connect(installButton, &QPushButton::clicked, [installButton, package]() {
+
+    // If package merging is enabled, this button just adds the package to a list
+    if (SPPLICE_MERGE_ENABLE) {
+      // Search for this package in the list
+      auto iterator = std::find(SPPLICE_MERGE_SOURCES.begin(), SPPLICE_MERGE_SOURCES.end(), package);
+      // If it wasn't found in the list, add it
+      if (iterator == SPPLICE_MERGE_SOURCES.end()) {
+        SPPLICE_MERGE_SOURCES.push_back(package);
+        installButton->setText("Selected");
+        installButton->setStyleSheet("color: #faa81a;");
+        return;
+      }
+      // If it was found, remove it
+      SPPLICE_MERGE_SOURCES.erase(iterator);
+      installButton->setText("Select");
+      installButton->setStyleSheet("");
+      return;
+    }
 
     // Create a thread for asynchronous installation
     PackageItemWorker *worker = new PackageItemWorker;

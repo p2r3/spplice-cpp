@@ -3,6 +3,9 @@
 
 #include <filesystem>
 #include <fstream>
+#include <vector>
+
+#include "tools/package.h" // ToolsPackage
 
 // Comment this line to target Linux, uncomment to target Windows
 #define TARGET_WINDOWS
@@ -16,6 +19,9 @@ extern const std::filesystem::path REPO_PATH;
 extern int SPPLICE_INSTALL_STATE;
 extern int SPPLICE_NETCON_PORT;
 extern const std::string SPPLICE_VERSION_TAG;
+
+extern bool SPPLICE_MERGE_ENABLE;
+extern std::vector<const ToolsPackage::PackageData*> SPPLICE_MERGE_SOURCES;
 
 extern std::string SPPLICE_STEAMAPP_NAMES[];
 extern std::string SPPLICE_STEAMAPP_DIRS[];

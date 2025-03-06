@@ -1,6 +1,9 @@
 #include <filesystem>
 #include <fstream>
+#include <vector>
+
 #include "globals.h"
+#include "tools/package.h" // ToolsPackage
 
 // Points to the system-specific designated cache directory
 #ifndef TARGET_WINDOWS
@@ -32,6 +35,11 @@ int SPPLICE_NETCON_PORT = -1;
 
 // Holds the current version's GitHub tag for automatic updates
 const std::string SPPLICE_VERSION_TAG = "v0.8.1-alpha";
+
+// Whether package merging should be allowed (false on startup)
+bool SPPLICE_MERGE_ENABLE = false;
+// Holds a list of packages to be used for merging
+std::vector<const ToolsPackage::PackageData*> SPPLICE_MERGE_SOURCES;
 
 // Contains a list of compatible Steam app names
 std::string SPPLICE_STEAMAPP_NAMES[] = {

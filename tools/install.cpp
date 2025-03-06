@@ -9,11 +9,14 @@
 #include <thread>
 #include <chrono>
 
+#include <QString>
+
 #include "../globals.h" // Project globals
 #include "curl.h" // ToolsCURL
 #include "netcon.h" // ToolsNetCon
 #include "qt.h" // ToolsQT
 #include "js.h" // ToolsJS
+#include "merge.h" // ToolsMerge
 
 #ifdef TARGET_WINDOWS
   #include "../deps/win32/include/archive.h"
@@ -174,6 +177,17 @@ std::wstring ToolsInstall::getProcessPath (const std::string &processName) {
   CloseHandle(snapshot);
   return L"";
 
+}
+#endif
+
+// Returns true if the Portal 2 process is running
+#ifndef TARGET_WINDOWS
+bool ToolsInstall::isGameRunning () {
+  return ToolsInstall::getProcessPath("portal2_linux") != "" || ToolsInstall::getProcessPath("portal2.exe") != "";
+}
+#else
+bool ToolsInstall::isGameRunning () {
+  return ToolsInstall::getProcessPath("portal2.exe") != L"";
 }
 #endif
 
@@ -485,26 +499,53 @@ bool isDirectoryLink (const std::filesystem::path linkName) {
 }
 #endif
 
-// Installs the package located at the temporary directory (CACHE_DIR/current_package)
-std::string ToolsInstall::installPackageFile (const std::filesystem::path packageFile, const std::vector<std::string> args) {
+// Checks if the given file exists and is up-to-date
+bool ToolsInstall::validateFileVersion (std::filesystem::path filePath, const std::string &version) {
 
-  // Extract the package to a temporary directory
-  const std::filesystem::path tmpPackageDirectory = CACHE_DIR / "tempcontent";
-  if (std::filesystem::exists(tmpPackageDirectory)) {
-    std::filesystem::remove_all(tmpPackageDirectory);
-  }
-  std::filesystem::create_directories(tmpPackageDirectory);
+  // Check if the given file exists
+  if (!std::filesystem::exists(filePath)) return false;
 
-  if (!extractLocalFile(packageFile, tmpPackageDirectory)) {
-    return "Failed to extract package. Please clear the cache and try again.";
+  // Check if the respective version file exists
+  filePath += ".ver";
+  if (!std::filesystem::exists(filePath)) return false;
+
+  // Read the version file
+  std::ifstream versionFile(filePath);
+  std::string localVersion = "";
+
+  if (versionFile.is_open()) {
+    std::getline(versionFile, localVersion);
+    versionFile.close();
   }
+
+  return localVersion == version;
+
+}
+
+// Write a version file for the given file
+bool ToolsInstall::updateFileVersion (std::filesystem::path filePath, const std::string &version) {
+
+  filePath += ".ver";
+  std::ofstream versionFile(filePath);
+
+  if (versionFile.is_open()) {
+    versionFile << version;
+    versionFile.close();
+    return true;
+  }
+  return false;
+
+}
+
+// Installs the given directory of package files
+std::string installPackageDirectory (const std::filesystem::path packageDirectory, const std::vector<std::string> args) {
 
   // Ensure the existence of a soundcache directory
-  std::filesystem::create_directories(tmpPackageDirectory / "maps");
-  std::filesystem::create_directories(tmpPackageDirectory / "maps" / "soundcache");
+  std::filesystem::create_directories(packageDirectory / "maps");
+  std::filesystem::create_directories(packageDirectory / "maps" / "soundcache");
 
   // Find the JS API entry point
-  const std::filesystem::path jsEntryPoint = tmpPackageDirectory / "main.js";
+  const std::filesystem::path jsEntryPoint = packageDirectory / "main.js";
   bool jsEntryPointExists = std::filesystem::exists(jsEntryPoint);
 
   // Disable the TCP console server by default
@@ -519,7 +560,7 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
 
   // Start Portal 2
   if (!startPortal2(args)) {
-    std::filesystem::remove_all(tmpPackageDirectory);
+    std::filesystem::remove_all(packageDirectory);
     return "Failed to start " + SPPLICE_STEAMAPP_NAMES[SPPLICE_STEAMAPP_INDEX] + ". Is Steam running?";
   }
 
@@ -565,11 +606,11 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
   }
 
   // Link the extracted package files to the destination tempcontent directory
-  if (!linkDirectory(tmpPackageDirectory, tempcontentPath)) {
-    std::filesystem::remove_all(tmpPackageDirectory);
+  if (!linkDirectory(packageDirectory, tempcontentPath)) {
+    std::filesystem::remove_all(packageDirectory);
     return "Failed to link package files to tempcontent.";
   }
-  LOGFILE << "[I] Linked " << tmpPackageDirectory << " to " << tempcontentPath << std::endl;
+  LOGFILE << "[I] Linked " << packageDirectory << " to " << tempcontentPath << std::endl;
 
   const std::filesystem::path soundcacheSourcePath = GAME_DIR / SPPLICE_STEAMAPP_DIRS[SPPLICE_STEAMAPP_INDEX] / "maps" / "soundcache" / "_master.cache";
   const std::filesystem::path soundcacheDestPath = tempcontentPath / "maps" / "soundcache" / "_master.cache";
@@ -599,8 +640,131 @@ std::string ToolsInstall::installPackageFile (const std::filesystem::path packag
   }
 
   // Report install success to the UI
-  LOGFILE << "[I] Installation of " << packageFile << " completed" << std::endl;
+  LOGFILE << "[I] Installation of " << packageDirectory << " completed" << std::endl;
   return "";
+}
+
+// Extracts and installs the given package file
+std::string ToolsInstall::installPackageFile (const std::filesystem::path packageFile, const std::vector<std::string> args) {
+
+  // Extract the package to a temporary directory
+  const std::filesystem::path packageDirectory = CACHE_DIR / "tempcontent";
+  if (std::filesystem::exists(packageDirectory)) {
+    std::filesystem::remove_all(packageDirectory);
+  }
+  std::filesystem::create_directories(packageDirectory);
+
+  if (!extractLocalFile(packageFile, packageDirectory)) {
+    return "Failed to extract package. Please clear the cache and try again.";
+  }
+
+  // Install the files from the extracted directory
+  return installPackageDirectory(packageDirectory, args);
+
+}
+
+// Downloads the package archive pointed to by the given PackageData object
+std::filesystem::path ToolsInstall::downloadPackageFromData (const ToolsPackage::PackageData *package) {
+
+  // Avoid downloading packages from the special "local" repository
+  if (package->repository == "local") {
+    // Local packages are always found at this known location
+    std::filesystem::path localFilePath = (APP_DIR / "local") / package->file;
+    // If no local package file exists, indicate failure with empty path
+    if (!std::filesystem::exists(localFilePath)) {
+      return std::filesystem::path();
+    }
+    return (APP_DIR / "local") / package->file;
+  }
+
+  // Generate a hash from the file's URL to use as a file name
+  size_t fileURLHash = std::hash<std::string>{}(package->file);
+  std::filesystem::path filePath = CACHE_DIR / std::to_string(fileURLHash);
+
+  // Download the package file if we don't have a valid cache
+  if (CACHE_ENABLE && ToolsInstall::validateFileVersion(filePath, package->version)) {
+    LOGFILE << "[I] Cached package found, skipping download" << std::endl;
+  } else {
+    if (CACHE_ENABLE && !ToolsInstall::updateFileVersion(filePath, package->version)) {
+      LOGFILE << "[W] Couldn't open package version file for writing" << std::endl;
+    }
+    if (!ToolsCURL::downloadFile(package->file, filePath)) {
+      // Return an empty path to indicate failure
+      return std::filesystem::path();
+    }
+  }
+
+  // Return the downloaded archive
+  return filePath;
+
+}
+
+// Merges a list of packages into one and installs it
+std::string ToolsInstall::installMergedPackage (std::vector<const ToolsPackage::PackageData*> sources) {
+
+  // Each package will be assigned a unique sequential index
+  int index = 0;
+  QStringList sourcePaths;
+
+  // Store all command line arguments in one list
+  std::vector<std::string> args;
+
+  // Iterate through all selected packages
+  for (auto package : sources) {
+    index ++;
+
+    // Create an output directory for the package contents
+    const std::filesystem::path tmpPackageDirectory = CACHE_DIR / ("sppmerge" + std::to_string(index));
+    // Ensure a completely clean output directory
+    if (std::filesystem::exists(tmpPackageDirectory)) {
+      std::filesystem::remove_all(tmpPackageDirectory);
+    }
+    std::filesystem::create_directories(tmpPackageDirectory);
+
+    // Download (or find) the package archive file
+    std::filesystem::path archivePath = ToolsInstall::downloadPackageFromData(package);
+    if (archivePath.empty()) return "Some package files could not be obtained.";
+
+    // Extract the archive file to its dedicated temporary directory
+    bool extractSuccess = extractLocalFile(archivePath, tmpPackageDirectory);
+
+    // Remove downloaded archives if cache is disabled
+    if (!CACHE_ENABLE && package->repository != "local") {
+      std::filesystem::remove(archivePath);
+    }
+
+    // Handle extraction failure
+    if (!extractSuccess) return "Some package files could not be extracted.";
+
+    // Store output package directories in a list for use with the merge tool
+#ifndef TARGET_WINDOWS
+    sourcePaths.push_back(QString::fromStdString(tmpPackageDirectory.string()));
+#else
+    sourcePaths.push_back(QString::fromStdWString(tmpPackageDirectory.wstring()));
+#endif
+
+    // Add command line arguments to merged list
+    args.insert(args.end(), package->args.begin(), package->args.end());
+
+  }
+
+  // Ensure a clean output directory for the merged package
+  const std::filesystem::path packageDirectory = CACHE_DIR / "tempcontent";
+  if (std::filesystem::exists(packageDirectory)) {
+    std::filesystem::remove_all(packageDirectory);
+  }
+  std::filesystem::create_directories(packageDirectory);
+
+#ifndef TARGET_WINDOWS
+  QString packageDirectoryQString = QString::fromStdString(packageDirectory.string());
+#else
+  QString packageDirectoryQString = QString::fromStdWString(packageDirectory.wstring());
+#endif
+
+  // Perform package merge
+  ToolsMerge::mergeSourcesList(sourcePaths, packageDirectoryQString);
+  // Install the merged package
+  return installPackageDirectory(packageDirectory, args);
 
 }
 

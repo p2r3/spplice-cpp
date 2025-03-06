@@ -5,6 +5,7 @@
     <file>resources/fonts/Quicksand-Medium.ttf</file>
     <file>resources/settings.png</file>
     <file>resources/add.png</file>
+    <file>resources/play.png</file>
     <file>resources/down-arrow.png</file>
     <file>resources/icon.ico</file>
   </qresource>

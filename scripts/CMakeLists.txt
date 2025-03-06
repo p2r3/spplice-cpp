@@ -77,6 +77,7 @@ add_executable(SppliceCPP
   ../tools/repo.cpp
   ../tools/js.cpp
   ../tools/netcon.cpp
+  ../tools/merge.cpp
   ../deps/shared/duktape/duktape.c
   ${RESOURCES}
 )

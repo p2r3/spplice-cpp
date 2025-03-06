@@ -198,10 +198,12 @@ int main (int argc, char *argv[]) {
   // Check for updates on a separate thread
   std::thread(ToolsUpdate::installUpdate).detach();
 
+  QPushButton *settingsButton = window.getSettingsButton();
+  QPushButton *repositoryButton = window.getRepositoryButton();
   QVBoxLayout *packageContainer = window.getPackageListLayout();
 
   // Connect the "Settings" button
-  QObject::connect(window.getSettingsButton(), &QPushButton::clicked, [packageContainer]() {
+  QObject::connect(settingsButton, &QPushButton::clicked, [packageContainer, repositoryButton]() {
 
     // Create settings dialog
     QDialog *dialog = new QDialog;
@@ -229,8 +231,39 @@ int main (int argc, char *argv[]) {
       } else SPPLICE_STEAMAPP_INDEX = newIndex;
     });
 
+    // Set the text of the package merging toggle button
+    QPushButton *mergeToggle = dialogUI.MergeToggleBtn;
+    mergeToggle->setText(SPPLICE_MERGE_ENABLE ? "Disable merging" : "Enable merging");
+
+    // Connect the merge toggle button
+    QObject::connect(mergeToggle, &QPushButton::clicked, [mergeToggle, packageContainer, repositoryButton]() {
+      // Refuse toggling merging if a package is installed/installing
+      if (SPPLICE_INSTALL_STATE != 0) {
+        QMessageBox::critical(nullptr, "Game is Running", "You may not toggle merging while a package is installed.");
+        return;
+      }
+      // Toggle the merging behavior
+      SPPLICE_MERGE_ENABLE = !SPPLICE_MERGE_ENABLE;
+      SPPLICE_MERGE_SOURCES = {};
+      // Update the toggle button text
+      mergeToggle->setText(SPPLICE_MERGE_ENABLE ? "Disable merging" : "Enable merging");
+      // Update the button text of all listed packages
+      for (int i = 0; i < packageContainer->count(); i ++) {
+        QWidget *packageItem = packageContainer->itemAt(i)->widget();
+        if (!packageItem) continue;
+        QPushButton *button = packageItem->findChild<QPushButton*>("PackageInstallButton");
+        if (!button) continue;
+        button->setText(SPPLICE_MERGE_ENABLE ? "Select" : "Install");
+        button->setStyleSheet("");
+      }
+      // Update the "Add Repository" button icon
+      if (!SPPLICE_MERGE_ENABLE) repositoryButton->setStyleSheet("");
+      else repositoryButton->setStyleSheet("border-image: url(\":/resources/play.png\") 0 0 0 0 stretch stretch;");
+    });
+
     // Set the text of the cache toggle button
-    dialogUI.CacheToggleBtn->setText(CACHE_ENABLE ? "Disable cache" : "Enable cache");
+    QPushButton *cacheToggle = dialogUI.CacheToggleBtn;
+    cacheToggle->setText(CACHE_ENABLE ? "Disable cache" : "Enable cache");
 
     // Connect the "Clear cache" button
     QObject::connect(dialogUI.CacheClearBtn, &QPushButton::clicked, []() {
@@ -238,8 +271,6 @@ int main (int argc, char *argv[]) {
       std::filesystem::create_directories(CACHE_DIR);
       QMessageBox::information(nullptr, "Cache Cleared", "Cache has been cleared successfully.");
     });
-
-    QPushButton *cacheToggle = dialogUI.CacheToggleBtn;
 
     // Connect the cache toggle button
     QObject::connect(cacheToggle, &QPushButton::clicked, [cacheToggle]() {
@@ -307,7 +338,43 @@ int main (int argc, char *argv[]) {
   });
 
   // Connect the "Add Repository" button
-  QObject::connect(window.getRepositoryButton(), &QPushButton::clicked, [packageContainer]() {
+  QObject::connect(repositoryButton, &QPushButton::clicked, [packageContainer]() {
+
+    // If merging is enabled, use this button to install the packages
+    if (SPPLICE_MERGE_ENABLE) {
+
+      if (SPPLICE_MERGE_SOURCES.size() < 2) {
+        ToolsQT::displayErrorPopup("Installation aborted", "Select two or more packages before merging.");
+        return;
+      }
+      if (SPPLICE_INSTALL_STATE != 0) {
+        ToolsQT::displayErrorPopup("Spplice is busy", "A package is already installed or being installed.");
+        return;
+      }
+      SPPLICE_INSTALL_STATE = 1;
+
+      // Attempt to merge and install packages
+      const std::string mergeResult = ToolsInstall::installMergedPackage(SPPLICE_MERGE_SOURCES);
+
+      // Display any installation errors to the user
+      if (mergeResult != "") {
+        ToolsQT::displayErrorPopup("Installation aborted", mergeResult);
+        SPPLICE_INSTALL_STATE = 0;
+        return;
+      }
+      SPPLICE_INSTALL_STATE = 2;
+
+      // Stall until Portal 2 has been closed
+      while (ToolsInstall::isGameRunning()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+      }
+      // Uninstall the package, reset the state
+      ToolsInstall::uninstall();
+      SPPLICE_INSTALL_STATE = 0;
+
+      return;
+
+    }
 
     // Create repository management dialog
     QDialog *dialog = new QDialog;
