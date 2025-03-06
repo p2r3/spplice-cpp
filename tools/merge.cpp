@@ -215,19 +215,37 @@ void replaceScriptGlobals (const sourceProperties &properties) {
       // Search the script for all occurances of the relevant global
       int pos = 0;
       while ((pos = script.indexOf(global, pos)) != -1) {
+
         // Ensure that we're replacing whole words, not parts of words
-        if ((pos > 0 && charIsNamePart(script[pos - 1])) || charIsNamePart(script[pos + global.length()])) {
+        if (pos > 0 && charIsNamePart(script[pos - 1])) {
+          // Check for escape sequences before disqualifying match
+          int slashes = 0;
+          if (pos > 1 && script[pos - 2] == '\\') {
+            while (pos - slashes > 1 && script[pos - 2 - slashes] == '\\') slashes ++;
+          } else if (pos > 5 && script[pos - 6] == '\\' && script[pos - 5] == 'x') {
+            while (pos - slashes > 5 && script[pos - 6 - slashes] == '\\') slashes ++;
+          }
+          // An even number of backslashes indicates no unresolved escape sequence
+          if (slashes % 2 == 0) {
+            pos += global.length();
+            continue;
+          }
+        }
+        if (charIsNamePart(script[pos + global.length()])) {
           pos += global.length();
           continue;
         }
+
         // If current result is on the same line as an IncludeScript, don't replace
         if (script.lastIndexOf("\n", pos) < script.lastIndexOf("IncludeScript(\"", pos)) {
           pos += global.length();
           continue;
         }
+
         // Perform substring replacement
         script.replace(pos, global.length(), renamed);
         pos += renamed.length();
+
       }
     }
 
