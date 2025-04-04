@@ -105,15 +105,18 @@ std::string ToolsNetCon::readConsole (int sockfd, size_t size) {
   // Low timeout, don't wait for data to become available
   int result = poll(&pfd, 1, 25);
 
-  // Log unexpected poll flags
+  // Handle unexpected poll flags
   if (pfd.revents & POLLHUP) {
     LOGFILE << "[E] Socket hang-up detected (POLLHUP)." << std::endl;
+    return "\x04";
   }
   if (pfd.revents & POLLERR) {
     LOGFILE << "[E] Socket error detected (POLLERR)." << std::endl;
+    return "\x04";
   }
   if (pfd.revents & POLLNVAL) {
     LOGFILE << "[E] Invalid request: socket not open (POLLNVAL)." << std::endl;
+    return "\x04";
   }
 
   // Handle the poll result
