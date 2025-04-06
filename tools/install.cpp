@@ -238,10 +238,10 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
 
     // If the above failed, revert to using the Steam browser protocol
     std::string command = "xdg-open steam://run/"+ appid +"//-tempcontent";
-    if (SPPLICE_NETCON_PORT != -1) command += " -netconport " + std::to_string(SPPLICE_NETCON_PORT);
+    if (SPPLICE_NETCON_PORT != -1) command += "%20-netconport%20" + std::to_string(SPPLICE_NETCON_PORT);
 
     for (const std::string &arg : extraArgs) {
-      command += " " + arg;
+      command += "%20" + arg;
     }
 
     if (system(command.c_str()) != 0) {
