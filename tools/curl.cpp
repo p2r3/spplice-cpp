@@ -180,10 +180,10 @@ std::string ToolsCURL::wsReceive (CURL *curl, size_t size) {
   // If the socket is not ready, assume there's just no data to be read
   if (response == CURLE_AGAIN) return "";
 
-  // Log errors, return empty string if response not OK
+  // Log errors, return ASCII End of Transmission if response not OK
   if (response != CURLE_OK) {
     LOGFILE << "[E] Failed to receive message from WebSocket: " << curl_easy_strerror(response) << std::endl;
-    return "";
+    return "\x04";
   }
 
   // Return a string representation of the buffer
