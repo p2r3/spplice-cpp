@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <vector>
 
 #include "../globals.h" // Project globals
 
@@ -97,6 +98,9 @@ bool ToolsNetCon::sendCommand (int sockfd, std::string command) {
 // Reads the given amount of bytes from the TCP console on the given socket
 std::string ToolsNetCon::readConsole (int sockfd, size_t size) {
 
+  // Don't attempt to allocate memory for a zero-length buffer
+  if (size == 0) return "";
+
   // Check if data is available for reading
   struct pollfd pfd;
   pfd.fd = sockfd;
@@ -129,12 +133,11 @@ std::string ToolsNetCon::readConsole (int sockfd, size_t size) {
     return "";
   }
 
-  // Initialize an empty buffer
-  char buffer[size];
-  memset(buffer, 0, size);
+  // Initialize an empty buffer of variable size
+  std::vector<char> buffer(size);
 
   // Attempt to receive data
-  int received = recv(sockfd, buffer, size, 0);
+  int received = recv(sockfd, buffer.data(), size, 0);
   if (received <= 0) {
     LOGFILE << "[E] Failed to receive data from TCP console server." << std::endl;
     // Return ASCII End of Transmission
@@ -142,6 +145,6 @@ std::string ToolsNetCon::readConsole (int sockfd, size_t size) {
   }
 
   // Convert the relevant part of the buffer to a string
-  return std::string(buffer, received);
+  return std::string(buffer.data(), received);
 
 }
