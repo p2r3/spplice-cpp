@@ -311,6 +311,10 @@ struct customJS {
 
       const std::string data = ToolsCURL::wsReceive(webSockets[sockid], size);
 
+      if (data == "\x04") {
+        return duk_generic_error(ctx, "ws.read: Failed to read from socket");
+      }
+
       duk_push_lstring(ctx, data.c_str(), data.length());
       return 1;
 
