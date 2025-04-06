@@ -17,6 +17,7 @@
 
 #include "netcon.h" // ToolsNetCon
 #include "curl.h" // ToolsCURL
+#include "install.h" // ToolsInstall
 
 // Definitions for this source file
 #include "js.h"
@@ -235,6 +236,12 @@ struct customJS {
       return 1;
 
     }
+    static duk_ret_t status (duk_context *ctx) {
+
+      duk_push_boolean(ctx, ToolsInstall::isGameRunning());
+      return 1;
+
+    }
   };
 
   // Implements a WebSocket client interface
@@ -407,6 +414,8 @@ void ToolsJS::runFile (const std::filesystem::path &filePath) {
   duk_put_prop_string(ctx, obj_idx, "send");
   duk_push_c_function(ctx, customJS::game::read, 2);
   duk_put_prop_string(ctx, obj_idx, "read");
+  duk_push_c_function(ctx, customJS::game::status, 0);
+  duk_put_prop_string(ctx, obj_idx, "status");
   duk_put_global_string(ctx, "game");
 
   obj_idx = duk_push_object(ctx);
