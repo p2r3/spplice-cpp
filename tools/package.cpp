@@ -113,6 +113,7 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
   if (filePath.empty()) {
     if (package->repository == "local") ToolsQT::displayErrorPopup("Installation aborted", "Package file missing.");
     else ToolsQT::displayErrorPopup("Installation aborted", "Failed to download package file.");
+    emit installWorkerDone();
     return;
   }
   // Attempt installation
@@ -127,6 +128,7 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
 
     SPPLICE_INSTALL_STATE = 0;
     emit installStateUpdate();
+    emit installWorkerDone();
 
     return;
   }
@@ -144,6 +146,7 @@ void PackageItemWorker::installPackage (const ToolsPackage::PackageData *package
 
   SPPLICE_INSTALL_STATE = 0;
   emit installStateUpdate();
+  emit installWorkerDone();
 
 }
 
@@ -212,8 +215,8 @@ QWidget* ToolsPackage::createPackageItem (const ToolsPackage::PackageData *packa
     });
 
     // Clean up the thread once it's done
-    QObject::connect(worker, &PackageItemWorker::packageIconReady, workerThread, &QThread::quit);
-    QObject::connect(worker, &PackageItemWorker::packageIconReady, worker, &PackageItemWorker::deleteLater);
+    QObject::connect(worker, &PackageItemWorker::installWorkerDone, workerThread, &QThread::quit);
+    QObject::connect(worker, &PackageItemWorker::installWorkerDone, worker, &PackageItemWorker::deleteLater);
     QObject::connect(workerThread, &QThread::finished, workerThread, &QThread::deleteLater);
 
     // Start the worker thread

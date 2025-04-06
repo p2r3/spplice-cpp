@@ -40,6 +40,7 @@ class PackageItemWorker : public QObject {
     void packageIconResult (QPixmap pixmap);
     void packageIconReady ();
     void installStateUpdate ();
+    void installWorkerDone ();
 
 };
 
