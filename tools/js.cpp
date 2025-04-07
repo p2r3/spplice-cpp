@@ -443,7 +443,15 @@ void ToolsJS::runFile (const std::filesystem::path &filePath) {
   const std::string code = fileBuffer.str();
   duk_push_lstring(ctx, code.c_str(), code.length());
   if (duk_peval(ctx) != 0) {
-    LOGFILE << "[E] [" << filePath << "] " << duk_safe_to_string(ctx, -1) << std::endl;
+    if (duk_is_error(ctx, -1)) {
+      // If stack top contains an Error object, print its stack trace
+      duk_get_prop_string(ctx, -1, "stack");
+      LOGFILE << "[E] [" << filePath << "] " << duk_safe_to_string(ctx, -1) << std::endl;
+      duk_pop(ctx);
+    } else {
+      // Otherwise, just print whatever is at the top of the stack
+      LOGFILE << "[E] [" << filePath << "] " << duk_safe_to_string(ctx, -1) << std::endl;
+    }
   }
 
   // Clean up the context
