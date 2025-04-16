@@ -10,6 +10,7 @@
 #include <chrono>
 
 #include <QString>
+#include <QRandomGenerator>
 
 #include "../globals.h" // Project globals
 #include "curl.h" // ToolsCURL
@@ -553,9 +554,9 @@ std::string installPackageDirectory (const std::filesystem::path packageDirector
 
   // If the JS API is in use, enable the TCP console server
   if (jsEntryPointExists) {
-    // Use the default Source listen port, which is very likely to be free
-    // In Portal 2, only a UDP connection exists on this port by default
-    SPPLICE_NETCON_PORT = 27015;
+    // Use a random port from a wide range of private ports
+    // At the very least, if the port is blocked, retrying should fix it
+    SPPLICE_NETCON_PORT = QRandomGenerator::global()->bounded(53000, 58000);
   }
 
   // Start Portal 2

@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Spplice"
-#define MyAppVersion "0.9.4"
+#define MyAppVersion "0.9.5"
 #define MyAppPublisher "PortalRunner"
 #define MyAppURL "https://p2r3.com/spplice"
 #define MyAppExeName "SppliceCPP.exe"
