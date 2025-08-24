@@ -6,7 +6,7 @@
 #include "tools/package.h" // ToolsPackage
 
 // Points to the system-specific designated cache directory
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
 std::filesystem::path CACHE_DIR = (std::filesystem::path(std::getenv("HOME")) / ".cache") / "spplice-cpp";
 #else
 std::filesystem::path CACHE_DIR = std::filesystem::temp_directory_path() / "spplice-cpp";
@@ -14,7 +14,7 @@ std::filesystem::path CACHE_DIR = std::filesystem::temp_directory_path() / "sppl
 bool CACHE_ENABLE = true;
 
 // Points to the system-specific designated application directory
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
 const std::filesystem::path APP_DIR = (std::filesystem::path(std::getenv("HOME")) / ".config") / "spplice-cpp";
 #else
 const std::filesystem::path APP_DIR = std::filesystem::path(std::getenv("APPDATA")) / "spplice-cpp";

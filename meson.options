@@ -1,0 +1,1 @@
+option('USE_QT6', type : 'boolean', value : false, description : 'Build with QT6')

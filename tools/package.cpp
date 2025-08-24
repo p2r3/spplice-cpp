@@ -15,8 +15,8 @@
 #include <QJsonArray>
 #include <QJsonValue>
 
-#include "../ui/packageitem.h"
-#include "../ui/packageinfo.h"
+#include "ui_PackageItem.h"
+#include "ui_PackageInfo.h"
 
 #include "../globals.h"
 #include "curl.h" // ToolsCURL

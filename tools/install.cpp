@@ -19,7 +19,7 @@
 #include "js.h" // ToolsJS
 #include "merge.h" // ToolsMerge
 
-#ifdef TARGET_WINDOWS
+#ifdef WIN32
   #include "../deps/win32/include/archive.h"
   #include "../deps/win32/include/archive_entry.h"
 
@@ -100,7 +100,7 @@ bool ToolsInstall::extractLocalFile (const std::filesystem::path path, const std
 }
 
 // Retrieves the path to a process executable using its name
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
 std::string ToolsInstall::getProcessPath (const std::string &processName) {
 
   DIR *dir = opendir("/proc");
@@ -182,7 +182,7 @@ std::wstring ToolsInstall::getProcessPath (const std::string &processName) {
 #endif
 
 // Returns true if the Portal 2 process is running
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
 bool ToolsInstall::isGameRunning () {
   return ToolsInstall::getProcessPath("portal2_linux") != "" || ToolsInstall::getProcessPath("portal2.exe") != "";
 }
@@ -193,7 +193,7 @@ bool ToolsInstall::isGameRunning () {
 #endif
 
 // Finds the Steam binary and uses it to start Portal 2
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
 bool startPortal2 (const std::vector<std::string> extraArgs) {
 
   std::string steamPath = ToolsInstall::getProcessPath("steam");
@@ -315,7 +315,7 @@ bool startPortal2 (const std::vector<std::string> extraArgs) {
 #endif
 
 // Creates a symbolic link for a directory on Linux, and an NTFS junction on Windows
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
 bool linkDirectory (const std::filesystem::path target, const std::filesystem::path linkName) {
 
   if (symlink(target.c_str(), linkName.c_str()) != 0) {
@@ -409,7 +409,7 @@ bool linkDirectory (const std::filesystem::path target, const std::filesystem::p
 #endif
 
 // Creates a symbolic link for a file on Linux and a hard link on Windows
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
 bool linkFile (const std::filesystem::path target, const std::filesystem::path linkName) {
 
   if (symlink(target.c_str(), linkName.c_str()) != 0) {
@@ -439,7 +439,7 @@ bool linkFile (const std::filesystem::path target, const std::filesystem::path l
 #endif
 
 // Removes a symbolic link to a directory on Linux, or an NTFS junction on Windows
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
 bool unlinkDirectory (const std::filesystem::path target) {
 
   if (unlink(target.c_str()) != 0) {
@@ -471,7 +471,7 @@ bool unlinkDirectory (const std::filesystem::path target) {
 }
 #endif
 
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
 bool isDirectoryLink (const std::filesystem::path linkName) {
 
   struct stat path_stat;
@@ -566,7 +566,7 @@ std::string installPackageDirectory (const std::filesystem::path packageDirector
   }
 
   // Find the Portal 2 game files path
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
   std::string gameProcessPath = "";
   while (gameProcessPath.length() == 0) {
     gameProcessPath = ToolsInstall::getProcessPath("portal2_linux");
@@ -738,7 +738,7 @@ std::string ToolsInstall::installMergedPackage (std::vector<const ToolsPackage::
     if (!extractSuccess) return "Some package files could not be extracted.";
 
     // Store output package directories in a list for use with the merge tool
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
     sourcePaths.push_back(QString::fromStdString(tmpPackageDirectory.string()));
 #else
     sourcePaths.push_back(QString::fromStdWString(tmpPackageDirectory.wstring()));
@@ -756,7 +756,7 @@ std::string ToolsInstall::installMergedPackage (std::vector<const ToolsPackage::
   }
   std::filesystem::create_directories(packageDirectory);
 
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
   QString packageDirectoryQString = QString::fromStdString(packageDirectory.string());
 #else
   QString packageDirectoryQString = QString::fromStdWString(packageDirectory.wstring());
@@ -776,7 +776,7 @@ bool ToolsInstall::killPortal2 () {
   if (SPPLICE_INSTALL_STATE == 0) return false;
 
   // Use a platform-specific command string for killing the process
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
   const std::string command = "pkill -e portal2_linux -9; pkill -e portal2.exe -9";
 #else
   const std::string command = "taskkill /F /T /IM portal2.exe";

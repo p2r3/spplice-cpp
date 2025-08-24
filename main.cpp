@@ -13,7 +13,7 @@
 #include <exception>
 #include <functional>
 // Platform specific includes
-#ifdef TARGET_WINDOWS
+#ifdef WIN32
   #include <windows.h>
 #endif
 // Main window dependencies
@@ -26,8 +26,8 @@
 #include <QtConcurrent>
 #include <QFutureWatcher>
 #include "ui/mainwindow_extend.h"
-#include "ui/repositories.h"
-#include "ui/settings.h"
+#include "ui_Repositories.h"
+#include "ui_Settings.h"
 
 // Project globals
 #include "globals.h"
@@ -144,7 +144,7 @@ void signalHandler (int signal) {
   crashHandler("Unknown Signal", signal);
 }
 
-#ifdef TARGET_WINDOWS
+#ifdef WIN32
 // Handles low-level exceptions on Windows
 LONG WINAPI windowsExceptionHandler (EXCEPTION_POINTERS* info) {
   crashHandler("Windows Exception", (uint)(info->ExceptionRecord->ExceptionCode));
@@ -296,7 +296,7 @@ int main (int argc, char *argv[]) {
     QLineEdit *cacheInput = dialogUI.CacheDirInput;
 
     // Write the cache directory to the input field
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
     cacheInput->setText(QString::fromStdString(CACHE_DIR.string()));
 #else
     cacheInput->setText(QString::fromStdWString(CACHE_DIR.wstring()));
@@ -305,7 +305,7 @@ int main (int argc, char *argv[]) {
     // Connect the cache directory "Apply" button
     QObject::connect(dialogUI.CacheDirBtn, &QPushButton::clicked, [cacheInput]() {
 
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
       const std::filesystem::path newPath(cacheInput->text().toStdString());
 #else
       const std::filesystem::path newPath(cacheInput->text().toStdWString());
@@ -418,7 +418,7 @@ int main (int argc, char *argv[]) {
 
   });
 
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
   // Dynamically set the window icon on Linux
   app.setWindowIcon(QIcon(":/resources/icon.ico"));
 #endif
@@ -483,7 +483,7 @@ int main (int argc, char *argv[]) {
   std::signal(SIGABRT, signalHandler);
   std::signal(SIGINT,  signalHandler);
 
-#ifdef TARGET_WINDOWS
+#ifdef WIN32
   // Register Windows low-level exception handler
   SetUnhandledExceptionFilter(windowsExceptionHandler);
 #endif

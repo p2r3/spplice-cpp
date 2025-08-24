@@ -4,7 +4,7 @@
 #include <QJsonArray>
 #include <QMessageBox>
 
-#ifdef TARGET_WINDOWS
+#ifdef WIN32
   #include <windows.h>
 #else
   #include <unistd.h>
@@ -17,7 +17,7 @@
 // Definitions for this source file
 #include "update.h"
 
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
   const std::string updateBinary = "SppliceCPP";
 #else
   const std::string updateBinary = "_autoupdate";
@@ -25,7 +25,7 @@
 
 std::filesystem::path getExecutablePath () {
 
-#ifdef TARGET_WINDOWS
+#ifdef WIN32
   wchar_t buffer[MAX_PATH];
   DWORD size = GetModuleFileNameW(NULL, buffer, MAX_PATH);
   if (size == 0 || size == MAX_PATH) return std::filesystem::path();
@@ -102,7 +102,7 @@ void ToolsUpdate::installUpdate () {
   LOGFILE << "[I] Found own executable at " << executablePath << std::endl;
 
   // Swap the running executable with the one we just downloaded
-#ifdef TARGET_WINDOWS
+#ifdef WIN32
   // If on Windows, defer replacing until next reboot to avoid conflicts
   if (MoveFileExW(updatePath.c_str(), executablePath.c_str(), MOVEFILE_DELAY_UNTIL_REBOOT)) {
     LOGFILE << "[I] Scheduled update file replacement for next reboot" << std::endl;

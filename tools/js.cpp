@@ -4,16 +4,9 @@
 #include <filesystem>
 #include <thread>
 #include <chrono>
-#include "../deps/shared/duktape/duktape.h"
+#include "duktape.h"
 
 #include "../globals.h" // Project globals
-
-#ifndef TARGET_WINDOWS
-  #include "../deps/linux/include/curl/curl.h"
-#else
-  #include "../deps/win32/include/curl/curl.h"
-  #include <windows.h>
-#endif
 
 #include "netcon.h" // ToolsNetCon
 #include "curl.h" // ToolsCURL

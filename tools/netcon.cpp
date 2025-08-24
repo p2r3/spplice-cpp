@@ -4,7 +4,7 @@
 
 #include "../globals.h" // Project globals
 
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
   #include <unistd.h>
   #include <arpa/inet.h>
   #include <poll.h>
@@ -16,14 +16,14 @@
 // Definitions for this source file
 #include "netcon.h"
 
-#ifdef TARGET_WINDOWS
+#ifdef WIN32
 // Counts the amount of open netcon sockets for Winsock setup and cleanup
 int openSockets = 0;
 #endif
 
 // Closes the given socket
 void ToolsNetCon::disconnect (int sockfd)
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
 {
   close(sockfd);
 }
@@ -38,7 +38,7 @@ void ToolsNetCon::disconnect (int sockfd)
 // Attempts to connect to the game's TCP console on SPPLICE_NETCON_PORT
 int ToolsNetCon::attemptConnection () {
 
-#ifdef TARGET_WINDOWS
+#ifdef WIN32
   // If this is the first socket we've made, set up Winsock
   if (++openSockets == 1) {
     WSADATA wsaData;
@@ -88,7 +88,7 @@ bool ToolsNetCon::sendCommand (int sockfd, std::string command) {
 }
 
 // Close our eyes and pretend Windows poll is the same as Linux
-#ifdef TARGET_WINDOWS
+#ifdef WIN32
   #define pollfd(a) WSAPOLLFD(a)
   #define poll(a, b, c) WSAPoll(a, b, c)
 #else

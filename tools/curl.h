@@ -3,11 +3,7 @@
 
 #include <filesystem>
 
-#ifndef TARGET_WINDOWS
-  #include "../deps/linux/include/curl/curl.h"
-#else
-  #include "../deps/win32/include/curl/curl.h"
-#endif
+#include "curl/curl.h"
 
 class ToolsCURL {
   public:

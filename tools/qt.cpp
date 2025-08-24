@@ -8,7 +8,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <functional>
-#include "../ui/errordialog.h"
+#include "ui_ErrorDialog.h"
 #include "curl.h"    // ToolsCURL
 #include "qt.h"      // ToolsQT
 #include "install.h" // ToolsInstall
@@ -20,7 +20,7 @@
 // Given a path to an image and a QSize, returns a pixmap of that image
 QPixmap ToolsQT::getPixmapFromPath (const std::filesystem::path &path, const QSize size) {
 
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
   return QPixmap(QString::fromStdString(path.string())).scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 #else
   return QPixmap(QString::fromStdWString(path.wstring())).scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);

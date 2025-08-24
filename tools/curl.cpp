@@ -8,11 +8,7 @@
 // Definitions for this source file
 #include "curl.h"
 
-#ifndef TARGET_WINDOWS
-  #include "../deps/linux/include/curl/curl.h"
-#else
-  #include "../deps/win32/include/curl/curl.h"
-#endif
+#include "curl/curl.h"
 
 // Initializes CURL globally
 void ToolsCURL::init () {

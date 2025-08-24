@@ -1,7 +1,7 @@
 // Headers for this source file
 #include "mainwindow_extend.h"
 // The UI class we're extending
-#include "mainwindow.h"
+#include "ui_MainWindow.h"
 
 #include <iostream>
 #include <fstream>
@@ -98,7 +98,7 @@ void MainWindow::dropEvent (QDropEvent *event) {
   foreach (const QUrl &url, mimeData->urls()) {
 
     // Retrieve file path
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
     std::filesystem::path filePath = url.toLocalFile().toStdString();
 #else
     std::filesystem::path filePath = url.toLocalFile().toStdWString();
@@ -188,7 +188,7 @@ void MainWindow::dropEvent (QDropEvent *event) {
       // Determine output path for the package icon file
       const std::string iconFileName = timess.str() + "_icon";
       const std::filesystem::path iconDestinationPath = archivePath / iconFileName;
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
       const QString iconDestinationQString = QString::fromStdString(iconDestinationPath.string());
 #else
       const QString iconDestinationQString = QString::fromStdWString(iconDestinationPath.wstring());

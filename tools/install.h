@@ -17,7 +17,7 @@ class ToolsInstall {
     static bool isGameRunning ();
     static bool killPortal2 ();
     static void uninstall ();
-#ifndef TARGET_WINDOWS
+#ifndef WIN32
     static std::string getProcessPath (const std::string &processName);
 #else
     static std::wstring getProcessPath (const std::string &processName);

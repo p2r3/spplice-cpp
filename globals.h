@@ -7,9 +7,6 @@
 
 #include "tools/package.h" // ToolsPackage
 
-// Comment this line to target Linux, uncomment to target Windows
-#define TARGET_WINDOWS
-
 extern std::filesystem::path CACHE_DIR;
 extern bool CACHE_ENABLE;
 extern const std::filesystem::path APP_DIR;
