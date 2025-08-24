@@ -47,7 +47,7 @@ mkdir shared
     cd ..; rm -rf xz
 
     mkdir archive; cd archive
-      wget https://libarchive.org/downloads/libarchive-v3.7.4-amd64.zip
+      wget https://web.archive.org/web/20240513215915/libarchive.org/downloads/libarchive-v3.7.4-amd64.zip
       unzip libarchive-v3.7.4-amd64.zip
       mv ./libarchive/bin/*.exe ../bin
       mv ./libarchive/bin/*.dll ../lib
