@@ -6,6 +6,7 @@
 #include <sstream>
 #include <dirent.h>
 #include <cstdlib>
+#include <cctype>
 #include <thread>
 #include <chrono>
 
@@ -106,7 +107,6 @@ std::string ToolsInstall::getProcessPath (const std::string &processName) {
   DIR *dir = opendir("/proc");
   if (!dir) return "";
 
-  // Since we're looking for a path, it's safe to assume that the binary is prefixed with a slash
   std::string queryString = "/" + processName;
   std::size_t queryLength = queryString.length();
 
@@ -115,26 +115,33 @@ std::string ToolsInstall::getProcessPath (const std::string &processName) {
   while ((entry = readdir(dir)) != NULL) {
 
     // If not a PID, continue
-    if (!isdigit(*entry->d_name)) continue;
+    if (!std::isdigit(static_cast<unsigned char>(*entry->d_name))) continue;
 
     // Get the command line of the current PID
     std::string cmdlineLink = "/proc/" + std::string(entry->d_name) + "/cmdline";
     std::ifstream cmdlineFile(cmdlineLink);
     if (!cmdlineFile.is_open()) continue;
 
-    std::string cmdline;
-    std::getline(cmdlineFile, cmdline);
+    std::ostringstream cmdlineBuffer;
+    cmdlineBuffer << cmdlineFile.rdbuf();
+    const std::string cmdline = cmdlineBuffer.str();
     cmdlineFile.close();
 
-    // Get the index of the end of the path in the current command line
-    std::size_t pathEnd = std::min(cmdline.find('\0'), cmdline.length());
-    // Check if the command line path is shorter than our query string
-    if (pathEnd < queryLength) continue;
+    std::size_t argumentStart = 0;
+    while (argumentStart < cmdline.length()) {
+      std::size_t argumentEnd = cmdline.find('\0', argumentStart);
+      if (argumentEnd == std::string::npos) argumentEnd = cmdline.length();
 
-    // Check if the command line path ends with the string we're looking for
-    if (cmdline.substr(pathEnd - queryLength, queryLength) == queryString) {
-      closedir(dir);
-      return cmdline.substr(0, pathEnd);
+      const bool matchesFullPath = argumentEnd >= queryLength &&
+          cmdline.compare(argumentEnd - queryLength, queryLength, queryString) == 0;
+      const bool matchesName = argumentEnd - argumentStart == processName.length() &&
+          cmdline.compare(argumentStart, processName.length(), processName) == 0;
+      if (matchesFullPath || matchesName) {
+        closedir(dir);
+        return cmdline.substr(argumentStart, argumentEnd - argumentStart);
+      }
+
+      argumentStart = argumentEnd + 1;
     }
 
   }
@@ -566,6 +573,11 @@ std::string installPackageDirectory (const std::filesystem::path packageDirector
   }
 
   // Find the Portal 2 game files path
+  const auto gameProcessDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(180);
+  bool gameProcessTimedOut = false;
+
+  LOGFILE << "[I] Waiting for " << SPPLICE_STEAMAPP_NAMES[SPPLICE_STEAMAPP_INDEX] << " process." << std::endl;
+
 #ifndef TARGET_WINDOWS
   std::string gameProcessPath = "";
   while (gameProcessPath.length() == 0) {
@@ -574,13 +586,33 @@ std::string installPackageDirectory (const std::filesystem::path packageDirector
     if (gameProcessPath.length() == 0) {
       gameProcessPath = ToolsInstall::getProcessPath("portal2.exe");
     }
+    if (gameProcessPath.length() == 0) {
+      if (std::chrono::steady_clock::now() >= gameProcessDeadline) {
+        gameProcessTimedOut = true;
+        break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    }
   }
 #else
   std::wstring gameProcessPath = L"";
   while (gameProcessPath.length() == 0) {
     gameProcessPath = ToolsInstall::getProcessPath("portal2.exe");
+    if (gameProcessPath.length() == 0) {
+      if (std::chrono::steady_clock::now() >= gameProcessDeadline) {
+        gameProcessTimedOut = true;
+        break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    }
   }
 #endif
+
+  if (gameProcessTimedOut) {
+    LOGFILE << "[E] Timed out waiting for " << SPPLICE_STEAMAPP_NAMES[SPPLICE_STEAMAPP_INDEX] << " process." << std::endl;
+    std::filesystem::remove_all(packageDirectory);
+    return "Failed to find " + SPPLICE_STEAMAPP_NAMES[SPPLICE_STEAMAPP_INDEX] + " process.";
+  }
 
   GAME_DIR = std::filesystem::path(gameProcessPath).parent_path();
   LOGFILE << "[I] Found " << SPPLICE_STEAMAPP_NAMES[SPPLICE_STEAMAPP_INDEX] << " at " << GAME_DIR << std::endl;
